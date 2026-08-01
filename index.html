@@ -423,6 +423,8 @@ function renderComingUp(){
   }
   thisWeek.sort(function(a,b){return a.date-b.date;});
   nextWeekGames.sort(function(a,b){return a.date-b.date;});
+  var thisMonday=thisWeek.length>0?weekMonday(thisWeek[0].date):new Date();
+  var nextMonday=nextWeekGames.length>0?weekMonday(nextWeekGames[0].date):new Date();
 
   function fmtWeekRange(mon,days){
     var end=new Date(mon.getTime()+(days-1)*86400000);
