@@ -538,7 +538,7 @@ function renderComingUp(){
   // A game stays visible through its game day; drops off at midnight after.
   var startOfToday=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   var nextGames=[];
-  for(var i=0;i<allGames.length&&nextGames.length<2;i++){
+  for(var i=0;i<allGames.length&&nextGames.length<3;i++){
     if(allGames[i].date>=startOfToday) nextGames.push(allGames[i]);
   }
 
@@ -594,7 +594,7 @@ function loadBuzz(){
     return fetchFeed(s.sub).then(function(items){
       return items.map(function(it){
         var ts=Date.parse(it.pubDate.replace(' ','T')+'Z');
-        return {title:it.title,url:it.link,thumb:it.thumbnail||'',created:ts,team:s.team,sub:s.sub};
+        return {title:it.title,url:it.link,thumb:(it.thumbnail||'').replace(/&amp;/g,'&'),created:ts,team:s.team,sub:s.sub};
       });
     }).catch(function(){ return []; });
   })).then(function(results){
