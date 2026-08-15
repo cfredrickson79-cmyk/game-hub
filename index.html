@@ -130,6 +130,19 @@ td.opp{line-height:1.3;vertical-align:middle}
 .at-vs{font-size:.72rem;font-weight:700;color:#999;padding:0 2px}
 .sep-arrow{display:inline-block;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid #999;flex-shrink:0;margin-right:-2px}
 .upcoming-empty{text-align:center;padding:40px 20px;color:#999;font-size:.92rem}
+/* --- What people are saying carousel --- */
+.buzz-section{margin-top:28px}
+.buzz-section h2{font-size:1rem;margin:0 0 10px}
+.buzz-carousel{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:10px}
+.buzz-card{flex:0 0 260px;scroll-snap-align:start;background:var(--card);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:12px 14px;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:inherit}
+.buzz-card:active{opacity:.8}
+.buzz-tag{display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:10px;align-self:flex-start}
+.buzz-tag.pitt{background:rgba(255,182,18,.25);color:#7a5c00}
+.buzz-tag.utes{background:rgba(204,0,0,.14);color:#a00}
+.buzz-title{font-size:.86rem;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.buzz-thumb{width:100%;height:110px;object-fit:cover;border-radius:8px}
+.buzz-meta{margin-top:auto;font-size:.74rem;color:#888;display:flex;gap:10px}
+.buzz-empty,.buzz-loading{color:#999;font-size:.88rem;padding:14px 2px}
 /* Phone */
 @media(max-width:720px){
   .grid{grid-template-columns:1fr}
@@ -247,6 +260,10 @@ td.opp{line-height:1.3;vertical-align:middle}
 <!-- ===== CALENDAR ===== -->
 <section id="up" class="panel active">
   <div id="coming-up-content"></div>
+  <div class="buzz-section">
+    <h2>What people are saying</h2>
+    <div id="buzz-carousel" class="buzz-carousel"><div class="buzz-loading">Loading the latest chatter&hellip;</div></div>
+  </div>
 </section>
 
 <section id="cal" class="panel">
@@ -441,65 +458,11 @@ function renderComingUp(){
   }
   allGames.sort(function(a,b){return a.date-b.date;});
 
-  // Helper: Monday of the week containing date d
-  function weekMonday(d){
-    var day=d.getDay(); // 0=Sun
-    var off=(day===0)?-6:1-day;
-    return new Date(d.getFullYear(),d.getMonth(),d.getDate()+off);
-  }
-
-  // Build set of Mon-Sun weeks that have at least one game
-  var weekMap={};
-  for(var i=0;i<allGames.length;i++){
-    var mon=weekMonday(allGames[i].date).getTime();
-    if(!weekMap[mon]) weekMap[mon]=[];
-    weekMap[mon].push(allGames[i]);
-  }
-  var weekKeys=Object.keys(weekMap).map(Number).sort(function(a,b){return a-b;});
-
-  // Current week's Monday
-  var todayMon=weekMonday(now).getTime();
-  // Show current week until Monday after it ends (day after Sunday)
-  var nextMondayAfter=new Date(todayMon+7*86400000);
-  var showCurrentWeek=(now<nextMondayAfter);
-
-  // Find the next two weeks with games
-  var thisWeek=[],nextWeekGames=[];
-  var found=0;
-  for(var w=0;w<weekKeys.length&&found<2;w++){
-    var wk=weekKeys[w];
-    var wkEnd=new Date(wk+7*86400000); // Monday after this week
-    // Skip weeks entirely in the past (ended before now, unless it's current week)
-    if(wk===todayMon && showCurrentWeek){
-      thisWeek=weekMap[wk]; found++;
-    } else if(wkEnd>now && wk!==todayMon){
-      if(found===0) { thisWeek=weekMap[wk]; found++; }
-      else { nextWeekGames=weekMap[wk]; found++; }
-    } else if(wk===todayMon && !showCurrentWeek){
-      // Current week but it's Monday after — skip
-    }
-  }
-  // If we only found thisWeek from current week, grab the next one
-  if(found===1){
-    for(var w=0;w<weekKeys.length;w++){
-      var wk=weekKeys[w];
-      if(wk>todayMon||(wk>todayMon-1)){
-        var wkEnd=new Date(wk+7*86400000);
-        if(wkEnd>now && weekMap[wk]!==thisWeek){
-          nextWeekGames=weekMap[wk]; break;
-        }
-      }
-    }
-  }
-  thisWeek.sort(function(a,b){return a.date-b.date;});
-  nextWeekGames.sort(function(a,b){return a.date-b.date;});
-  var thisMonday=thisWeek.length>0?weekMonday(thisWeek[0].date):new Date();
-  var nextMonday=nextWeekGames.length>0?weekMonday(nextWeekGames[0].date):new Date();
-
-  function fmtWeekRange(mon,days){
-    var end=new Date(mon.getTime()+(days-1)*86400000);
-    var mNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return mNames[mon.getMonth()]+' '+mon.getDate()+' \u2013 '+mNames[end.getMonth()]+' '+end.getDate();
+  // A game stays visible through its game day; drops off at midnight after.
+  var startOfToday=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  var nextGames=[];
+  for(var i=0;i<allGames.length&&nextGames.length<2;i++){
+    if(allGames[i].date>=startOfToday) nextGames.push(allGames[i]);
   }
 
   function renderCard(g){
@@ -522,23 +485,83 @@ function renderComingUp(){
       '</div>';
   }
 
-  function renderWeek(label,games){
-    if(games.length===0) return '';
-    var h='<div class="upcoming-week"><h3>'+label+'</h3>';
-    for(var i=0;i<games.length;i++) h+=renderCard(games[i]);
-    h+='</div>';
-    return h;
-  }
-
   var out='';
-  out+=renderWeek('This Week \u2014 '+fmtWeekRange(thisMonday,7),thisWeek);
-  out+=renderWeek('Next Week \u2014 '+fmtWeekRange(nextMonday,7),nextWeekGames);
+  for(var i=0;i<nextGames.length;i++) out+=renderCard(nextGames[i]);
 
-  if(!out) out='<div class="upcoming-empty">No games this week or next. Check the Game Calendar for the full schedule.</div>';
+  if(!out) out='<div class="upcoming-empty">Season complete. Check the Game Calendar for the full schedule.</div>';
 
   document.getElementById('coming-up-content').innerHTML=out;
 }
 renderComingUp();
+
+/* --- What people are saying (Reddit, past 24h, newest first) --- */
+function loadBuzz(){
+  var box=document.getElementById('buzz-carousel');
+  if(!box||box.getAttribute('data-loaded')) return;
+  box.setAttribute('data-loaded','1');
+  var SUBS=[{sub:'steelers',team:'pitt',label:'Steelers'},{sub:'UtahUtes',team:'utes',label:'Utes'}];
+  function fetchJson(url){
+    // Reddit blocks browser CORS, so go through relays with fallback
+    var relays=[
+      'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
+      'https://corsproxy.io/?url='+encodeURIComponent(url),
+      url
+    ];
+    function tryOne(i){
+      if(i>=relays.length) return Promise.reject(new Error('all relays failed'));
+      return fetch(relays[i]).then(function(r){
+        if(!r.ok) throw new Error('http '+r.status);
+        return r.json();
+      }).catch(function(){ return tryOne(i+1); });
+    }
+    return tryOne(0);
+  }
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function ago(utc){
+    var m=Math.max(1,Math.round((Date.now()/1000-utc)/60));
+    if(m<60) return m+'m ago';
+    var h=Math.round(m/60);
+    return h+'h ago';
+  }
+  var cutoff=Date.now()/1000-86400;
+  Promise.all(SUBS.map(function(s){
+    return fetchJson('https://www.reddit.com/r/'+s.sub+'/top.json?t=day&limit=15&raw_json=1')
+      .then(function(d){
+        return d.data.children.map(function(c){
+          var p=c.data;
+          var thumb='';
+          if(p.preview&&p.preview.images&&p.preview.images[0]){
+            var res=p.preview.images[0].resolutions;
+            if(res&&res.length) thumb=res[Math.min(2,res.length-1)].url;
+          }
+          return {title:p.title,score:p.score,comments:p.num_comments,created:p.created_utc,
+                  url:'https://www.reddit.com'+p.permalink,thumb:thumb,team:s.team,label:s.label};
+        });
+      }).catch(function(){ return []; });
+  })).then(function(results){
+    var posts=results[0].concat(results[1]).filter(function(p){return p.created>=cutoff;});
+    posts.sort(function(a,b){return b.created-a.created;}); // newest first
+    posts=posts.slice(0,20);
+    if(!posts.length){
+      box.innerHTML='<div class="buzz-empty">Nothing trending in the past 24 hours. Check back on game day.</div>';
+      return;
+    }
+    var h='';
+    for(var i=0;i<posts.length;i++){
+      var p=posts[i];
+      h+='<a class="buzz-card" href="'+p.url+'" target="_blank" rel="noopener">'+
+        '<span class="buzz-tag '+p.team+'">r/'+(p.team==='pitt'?'steelers':'UtahUtes')+'</span>'+
+        (p.thumb?'<img class="buzz-thumb" src="'+esc(p.thumb)+'" alt="" loading="lazy">':'')+
+        '<div class="buzz-title">'+esc(p.title)+'</div>'+
+        '<div class="buzz-meta"><span>&#9650; '+p.score+'</span><span>'+p.comments+' comments</span><span>'+ago(p.created)+'</span></div>'+
+        '</a>';
+    }
+    box.innerHTML=h;
+  }).catch(function(){
+    box.innerHTML='<div class="buzz-empty">Couldn\'t load posts right now.</div>';
+  });
+}
+loadBuzz();
 
 
 /* --- update legend + cost-tracker pills with custom logos --- */
