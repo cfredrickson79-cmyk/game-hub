@@ -143,6 +143,13 @@ td.opp{line-height:1.3;vertical-align:middle}
 .buzz-thumb{width:100%;height:110px;object-fit:cover;border-radius:8px}
 .buzz-meta{margin-top:auto;font-size:.74rem;color:#888;display:flex;gap:10px}
 .buzz-empty,.buzz-loading{color:#999;font-size:.88rem;padding:14px 2px}
+.buzz-card{-webkit-touch-callout:none;user-select:none;position:relative}
+.buzz-overlay{position:absolute;inset:0;background:rgba(0,0,0,.72);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:2}
+.buzz-overlay span{color:#fff;font-size:.85rem;font-weight:600}
+.buzz-overlay button{border:none;border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;font-size:.85rem}
+.buzz-hide-btn{background:#c00;color:#fff}
+.buzz-keep-btn{background:#eee;color:#333}
+.up-header{font-size:1rem;margin:0 0 10px}
 /* Phone */
 @media(max-width:720px){
   .grid{grid-template-columns:1fr}
@@ -486,6 +493,7 @@ function renderComingUp(){
   }
 
   var out='';
+  if(nextGames.length) out+='<h2 class="up-header">Next 3 Games</h2>';
   for(var i=0;i<nextGames.length;i++) out+=renderCard(nextGames[i]);
 
   if(!out) out='<div class="upcoming-empty">Season complete. Check the Game Calendar for the full schedule.</div>';
@@ -500,6 +508,9 @@ function loadBuzz(){
   if(!box||box.getAttribute('data-loaded')) return;
   box.setAttribute('data-loaded','1');
   var SUBS=[{sub:'steelers',team:'pitt'},{sub:'UtahUtes',team:'utes'}];
+  var HIDE_KEY='buzzDismissed';
+  function getHidden(){try{return JSON.parse(localStorage.getItem(HIDE_KEY))||[];}catch(e){return [];}}
+  function addHidden(u){var a=getHidden();if(a.indexOf(u)<0)a.push(u);localStorage.setItem(HIDE_KEY,JSON.stringify(a.slice(-300)));}
   function fetchFeed(sub){
     var rss='https://www.reddit.com/r/'+sub+'/top/.rss?t=day';
     return fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(rss))
@@ -521,7 +532,8 @@ function loadBuzz(){
       });
     }).catch(function(){ return []; });
   })).then(function(results){
-    var posts=results[0].concat(results[1]).filter(function(p){return p.created&&p.created>=cutoff;});
+    var hidden=getHidden();
+    var posts=results[0].concat(results[1]).filter(function(p){return p.created&&p.created>=cutoff&&hidden.indexOf(p.url)<0;});
     posts.sort(function(a,b){return b.created-a.created;}); // newest first
     posts=posts.slice(0,20);
     if(!posts.length){
@@ -531,7 +543,7 @@ function loadBuzz(){
     var h='';
     for(var i=0;i<posts.length;i++){
       var p=posts[i];
-      h+='<a class="buzz-card" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+
+      h+='<a class="buzz-card" data-url="'+esc(p.url)+'" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+
         '<span class="buzz-tag '+p.team+'">r/'+p.sub+'</span>'+
         (p.thumb?'<img class="buzz-thumb" src="'+esc(p.thumb)+'" alt="" loading="lazy">':'')+
         '<div class="buzz-title">'+esc(p.title)+'</div>'+
@@ -539,6 +551,24 @@ function loadBuzz(){
         '</a>';
     }
     box.innerHTML=h;
+    function showOverlay(card){
+      if(card.querySelector('.buzz-overlay')) return;
+      var ov=document.createElement('div');ov.className='buzz-overlay';
+      ov.innerHTML='<span>Hide this post?</span><div><button class="buzz-hide-btn">Hide</button> <button class="buzz-keep-btn">Keep</button></div>';
+      ov.addEventListener('click',function(e){
+        e.preventDefault();e.stopPropagation();
+        if(e.target.className==='buzz-hide-btn'){ addHidden(card.getAttribute('data-url')); card.remove(); }
+        else if(e.target.className==='buzz-keep-btn'){ ov.remove(); }
+      });
+      card.appendChild(ov);
+    }
+    box.querySelectorAll('.buzz-card').forEach(function(card){
+      var timer=null;
+      card.addEventListener('pointerdown',function(){ timer=setTimeout(function(){ timer=null; card.setAttribute('data-lp','1'); showOverlay(card); },550); });
+      ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ card.addEventListener(ev,function(){ if(timer){clearTimeout(timer);timer=null;} }); });
+      card.addEventListener('click',function(e){ if(card.getAttribute('data-lp')){ e.preventDefault(); card.removeAttribute('data-lp'); } });
+      card.addEventListener('contextmenu',function(e){ e.preventDefault(); });
+    });
   }).catch(function(){
     box.innerHTML='<div class="buzz-empty">Couldn\'t load posts right now.</div>';
   });
