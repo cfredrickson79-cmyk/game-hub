@@ -571,52 +571,34 @@ function renderComingUp(){
 }
 renderComingUp();
 
-/* --- What people are saying (Reddit, past 24h, newest first) --- */
+/* --- What people are saying (Reddit top-of-day via RSS, newest first) --- */
 function loadBuzz(){
   var box=document.getElementById('buzz-carousel');
   if(!box||box.getAttribute('data-loaded')) return;
   box.setAttribute('data-loaded','1');
-  var SUBS=[{sub:'steelers',team:'pitt',label:'Steelers'},{sub:'UtahUtes',team:'utes',label:'Utes'}];
-  function fetchJson(url){
-    // Reddit blocks browser CORS, so go through relays with fallback
-    var relays=[
-      'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
-      'https://corsproxy.io/?url='+encodeURIComponent(url),
-      url
-    ];
-    function tryOne(i){
-      if(i>=relays.length) return Promise.reject(new Error('all relays failed'));
-      return fetch(relays[i]).then(function(r){
-        if(!r.ok) throw new Error('http '+r.status);
-        return r.json();
-      }).catch(function(){ return tryOne(i+1); });
-    }
-    return tryOne(0);
+  var SUBS=[{sub:'steelers',team:'pitt'},{sub:'UtahUtes',team:'utes'}];
+  function fetchFeed(sub){
+    var rss='https://www.reddit.com/r/'+sub+'/top/.rss?t=day';
+    return fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(rss))
+      .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+      .then(function(d){ if(d.status!=='ok') throw new Error('feed error'); return d.items||[]; });
   }
   function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-  function ago(utc){
-    var m=Math.max(1,Math.round((Date.now()/1000-utc)/60));
+  function ago(ms){
+    var m=Math.max(1,Math.round((Date.now()-ms)/60000));
     if(m<60) return m+'m ago';
-    var h=Math.round(m/60);
-    return h+'h ago';
+    return Math.round(m/60)+'h ago';
   }
-  var cutoff=Date.now()/1000-86400;
+  var cutoff=Date.now()-86400000;
   Promise.all(SUBS.map(function(s){
-    return fetchJson('https://www.reddit.com/r/'+s.sub+'/top.json?t=day&limit=15&raw_json=1')
-      .then(function(d){
-        return d.data.children.map(function(c){
-          var p=c.data;
-          var thumb='';
-          if(p.preview&&p.preview.images&&p.preview.images[0]){
-            var res=p.preview.images[0].resolutions;
-            if(res&&res.length) thumb=res[Math.min(2,res.length-1)].url;
-          }
-          return {title:p.title,score:p.score,comments:p.num_comments,created:p.created_utc,
-                  url:'https://www.reddit.com'+p.permalink,thumb:thumb,team:s.team,label:s.label};
-        });
-      }).catch(function(){ return []; });
+    return fetchFeed(s.sub).then(function(items){
+      return items.map(function(it){
+        var ts=Date.parse(it.pubDate.replace(' ','T')+'Z');
+        return {title:it.title,url:it.link,thumb:it.thumbnail||'',created:ts,team:s.team,sub:s.sub};
+      });
+    }).catch(function(){ return []; });
   })).then(function(results){
-    var posts=results[0].concat(results[1]).filter(function(p){return p.created>=cutoff;});
+    var posts=results[0].concat(results[1]).filter(function(p){return p.created&&p.created>=cutoff;});
     posts.sort(function(a,b){return b.created-a.created;}); // newest first
     posts=posts.slice(0,20);
     if(!posts.length){
@@ -626,11 +608,11 @@ function loadBuzz(){
     var h='';
     for(var i=0;i<posts.length;i++){
       var p=posts[i];
-      h+='<a class="buzz-card" href="'+p.url+'" target="_blank" rel="noopener">'+
-        '<span class="buzz-tag '+p.team+'">r/'+(p.team==='pitt'?'steelers':'UtahUtes')+'</span>'+
+      h+='<a class="buzz-card" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+
+        '<span class="buzz-tag '+p.team+'">r/'+p.sub+'</span>'+
         (p.thumb?'<img class="buzz-thumb" src="'+esc(p.thumb)+'" alt="" loading="lazy">':'')+
         '<div class="buzz-title">'+esc(p.title)+'</div>'+
-        '<div class="buzz-meta"><span>&#9650; '+p.score+'</span><span>'+p.comments+' comments</span><span>'+ago(p.created)+'</span></div>'+
+        '<div class="buzz-meta"><span>'+ago(p.created)+'</span></div>'+
         '</a>';
     }
     box.innerHTML=h;
