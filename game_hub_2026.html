@@ -136,7 +136,7 @@ td.opp{line-height:1.3;vertical-align:middle}
 .buzz-carousel{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:10px}
 .buzz-card{flex:0 0 260px;scroll-snap-align:start;background:var(--card);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:12px 14px;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:inherit}
 .buzz-card:active{opacity:.8}
-.buzz-tag{display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:10px;align-self:flex-start}
+.buzz-tag{display:inline-block;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px;align-self:flex-start}
 .buzz-tag.pitt{background:rgba(255,182,18,.25);color:#7a5c00}
 .buzz-tag.utes{background:rgba(204,0,0,.14);color:#a00}
 .buzz-title{font-size:.86rem;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
@@ -579,20 +579,34 @@ function renderComingUp(){
 }
 renderComingUp();
 
-/* --- What people are saying (Reddit top-of-day via RSS, newest first) --- */
+/* --- What people are saying (RSS feeds via rss2json, past 24h, newest first) --- */
 function loadBuzz(){
   var box=document.getElementById('buzz-carousel');
   if(!box||box.getAttribute('data-loaded')) return;
   box.setAttribute('data-loaded','1');
-  var SUBS=[{sub:'steelers',team:'pitt'},{sub:'UtahUtes',team:'utes'}];
+  // Each feed: any RSS url; tag shown on the card; team colors the tag (pitt gold / utes red)
+  var FEEDS=[
+    {url:'https://www.reddit.com/r/steelers/top/.rss?t=day',team:'pitt',tag:'r/steelers'},
+    {url:'https://www.reddit.com/r/UtahUtes/top/.rss?t=day',team:'utes',tag:'r/UtahUtes'},
+    {url:'https://news.google.com/rss/search?q=Pittsburgh+Steelers&hl=en-US&gl=US&ceid=US:en',team:'pitt',tag:'news'},
+    {url:'https://news.google.com/rss/search?q=%22Utah+Utes%22+football&hl=en-US&gl=US&ceid=US:en',team:'utes',tag:'news'}
+    // X via rss.app (free tier: ~24h refresh, max 5 posts). Paste feed URLs when created:
+    // ,{url:'https://rss.app/feeds/XXXXXXXX.xml',team:'pitt',tag:'x'}
+    // ,{url:'https://rss.app/feeds/YYYYYYYY.xml',team:'utes',tag:'x'}
+  ];
   var HIDE_KEY='buzzDismissed';
   function getHidden(){try{return JSON.parse(localStorage.getItem(HIDE_KEY))||[];}catch(e){return [];}}
   function addHidden(u){var a=getHidden();if(a.indexOf(u)<0)a.push(u);localStorage.setItem(HIDE_KEY,JSON.stringify(a.slice(-300)));}
-  function fetchFeed(sub){
-    var rss='https://www.reddit.com/r/'+sub+'/top/.rss?t=day';
-    return fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(rss))
+  function fetchFeed(f){
+    return fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(f.url))
       .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
-      .then(function(d){ if(d.status!=='ok') throw new Error('feed error'); return d.items||[]; });
+      .then(function(d){ if(d.status!=='ok') throw new Error('feed error'); return (d.items||[]).slice(0,10); })
+      .then(function(items){
+        return items.map(function(it){
+          var ts=Date.parse(it.pubDate.replace(' ','T')+'Z');
+          return {title:it.title,url:it.link,thumb:(it.thumbnail||'').replace(/&amp;/g,'&'),created:ts,team:f.team,tag:f.tag};
+        });
+      }).catch(function(){ return []; });
   }
   function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
   function ago(ms){
@@ -601,18 +615,13 @@ function loadBuzz(){
     return Math.round(m/60)+'h ago';
   }
   var cutoff=Date.now()-86400000;
-  Promise.all(SUBS.map(function(s){
-    return fetchFeed(s.sub).then(function(items){
-      return items.map(function(it){
-        var ts=Date.parse(it.pubDate.replace(' ','T')+'Z');
-        return {title:it.title,url:it.link,thumb:(it.thumbnail||'').replace(/&amp;/g,'&'),created:ts,team:s.team,sub:s.sub};
-      });
-    }).catch(function(){ return []; });
-  })).then(function(results){
+  Promise.all(FEEDS.map(fetchFeed)).then(function(results){
     var hidden=getHidden();
-    var posts=results[0].concat(results[1]).filter(function(p){return p.created&&p.created>=cutoff&&hidden.indexOf(p.url)<0;});
+    var posts=[];
+    for(var r=0;r<results.length;r++) posts=posts.concat(results[r]);
+    posts=posts.filter(function(p){return p.created&&p.created>=cutoff&&hidden.indexOf(p.url)<0;});
     posts.sort(function(a,b){return b.created-a.created;}); // newest first
-    posts=posts.slice(0,20);
+    posts=posts.slice(0,24);
     if(!posts.length){
       box.innerHTML='<div class="buzz-empty">Nothing trending in the past 24 hours. Check back on game day.</div>';
       return;
@@ -621,7 +630,7 @@ function loadBuzz(){
     for(var i=0;i<posts.length;i++){
       var p=posts[i];
       h+='<a class="buzz-card" data-url="'+esc(p.url)+'" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+
-        '<span class="buzz-tag '+p.team+'">r/'+p.sub+'</span>'+
+        '<span class="buzz-tag '+p.team+'">'+esc(p.tag)+'</span>'+
         (p.thumb?'<img class="buzz-thumb" src="'+esc(p.thumb)+'" alt="">':'')+
         '<div class="buzz-title">'+esc(p.title)+'</div>'+
         '<div class="buzz-meta"><span>'+ago(p.created)+'</span></div>'+
