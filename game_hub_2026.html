@@ -622,7 +622,7 @@ function loadBuzz(){
       var p=posts[i];
       h+='<a class="buzz-card" data-url="'+esc(p.url)+'" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+
         '<span class="buzz-tag '+p.team+'">r/'+p.sub+'</span>'+
-        (p.thumb?'<img class="buzz-thumb" src="'+esc(p.thumb)+'" alt="" loading="lazy">':'')+
+        (p.thumb?'<img class="buzz-thumb" src="'+esc(p.thumb)+'" alt="">':'')+
         '<div class="buzz-title">'+esc(p.title)+'</div>'+
         '<div class="buzz-meta"><span>'+ago(p.created)+'</span></div>'+
         '</a>';
