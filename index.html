@@ -35,10 +35,12 @@ header .gold-bar{position:absolute;bottom:0;left:0;right:0;height:5px;background
 
 /* Tabs */
 nav.tabs{position:sticky;top:0;z-index:20;background:var(--card);display:flex;box-shadow:0 2px 12px rgba(0,0,0,.1)}
-nav.tabs button{flex:1;border:0;background:none;padding:15px 8px;font-size:.95rem;font-weight:700;color:#888;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s}
+nav.tabs button{flex:1;border:0;background:none;padding:15px 8px;font-size:.95rem;font-weight:700;color:#888;cursor:pointer;border-bottom:4px solid transparent;transition:all .15s}
 nav.tabs button:hover{color:var(--ink);background:#fafafa}
-nav.tabs button.active{color:var(--ink);border-bottom-color:var(--steel-gold)}
-nav.tabs button:nth-child(2).active{border-bottom-color:var(--ute-red)}
+nav.tabs button.active{color:var(--ink)}
+#tab-up.active{border-bottom-color:#FFB612;background:rgba(255,182,18,.10)}
+#tab-cal.active{border-bottom-color:#C60C30;background:rgba(198,12,48,.08)}
+#tab-plan.active{border-bottom-color:#00539B;background:rgba(0,83,155,.08)}
 .panel{display:none;padding-top:16px}
 .panel.active{display:block}
 
@@ -509,8 +511,8 @@ function loadBuzz(){
   box.setAttribute('data-loaded','1');
   // Each feed: any RSS url; tag shown on the card; team colors the tag (pitt gold / utes red)
   var FEEDS=[
-    {url:'https://www.reddit.com/r/steelers/top/.rss?t=day',team:'pitt',tag:'r/steelers'},
-    {url:'https://www.reddit.com/r/UtahUtes/top/.rss?t=day',team:'utes',tag:'r/UtahUtes'},
+    {url:'https://www.reddit.com/r/steelers/top/.rss?t=week',team:'pitt',tag:'r/steelers'},
+    {url:'https://www.reddit.com/r/UtahUtes/top/.rss?t=week',team:'utes',tag:'r/UtahUtes'},
     {url:'https://news.google.com/rss/search?q=Pittsburgh+Steelers&hl=en-US&gl=US&ceid=US:en',team:'pitt',tag:'news'},
     {url:'https://news.google.com/rss/search?q=%22Utah+Utes%22+football&hl=en-US&gl=US&ceid=US:en',team:'utes',tag:'news'}
     // X via rss.app (free tier: ~24h refresh, max 5 posts). Paste feed URLs when created:
@@ -537,7 +539,7 @@ function loadBuzz(){
     if(m<60) return m+'m ago';
     return Math.round(m/60)+'h ago';
   }
-  var cutoff=Date.now()-86400000;
+  var cutoff=Date.now()-172800000; // 48h
   Promise.all(FEEDS.map(fetchFeed)).then(function(results){
     var hidden=getHidden();
     var posts=[];
@@ -546,7 +548,7 @@ function loadBuzz(){
     posts.sort(function(a,b){return b.created-a.created;}); // newest first
     posts=posts.slice(0,24);
     if(!posts.length){
-      box.innerHTML='<div class="buzz-empty">Nothing trending in the past 24 hours. Check back on game day.</div>';
+      box.innerHTML='<div class="buzz-empty">Nothing trending in the past 48 hours. Check back on game day.</div>';
       return;
     }
     var h='';
