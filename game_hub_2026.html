@@ -640,7 +640,7 @@ function loadBuzz(){
       var p=posts[i];
       var WM={pitt:'https://raw.githubusercontent.com/cfredrickson79-cmyk/game-hub/main/logos/nfl/steelers.png',utes:'https://a.espncdn.com/i/teamlogos/ncaa/500/254.png'};
       var wmSrc=WM[p.team]||(customLogos[p.team]||{}).src;
-      var wm=wmSrc?' style="background-image:linear-gradient(rgba(255,255,255,.93),rgba(255,255,255,.93)),url('+wmSrc+');background-size:cover,auto 55%;background-position:center,center;background-repeat:no-repeat"':'';
+      var wm=wmSrc?' style="background-image:linear-gradient(rgba(255,255,255,.93),rgba(255,255,255,.93)),url('+wmSrc+');background-size:cover,auto 85%;background-position:center,right -14px bottom -14px;background-repeat:no-repeat"':'';
       h+='<a class="buzz-card" data-url="'+esc(p.url)+'" href="'+esc(p.url)+'" target="_blank" rel="noopener"'+wm+'>'+
         '<span class="buzz-tag '+p.team+'">'+esc(p.src)+'</span>'+
         (p.thumb?'<img class="buzz-thumb" src="'+esc(p.thumb)+'" alt="">':'')+
