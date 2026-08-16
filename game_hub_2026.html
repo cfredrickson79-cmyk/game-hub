@@ -120,14 +120,14 @@ td.opp{line-height:1.3;vertical-align:middle}
 
 .upcoming-week{margin-bottom:24px}
 .upcoming-week h3{font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:0 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line)}
-.upcoming-card{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:12px;padding:14px 18px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.upcoming-card{display:grid;grid-template-columns:90px 48px 150px 1fr;align-items:center;gap:14px;background:var(--card);border-radius:12px;padding:14px 18px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .upcoming-card .up-date{min-width:90px;font-weight:700;font-size:.88rem;color:#333;line-height:1.3}
 .upcoming-card .up-date .up-time{font-weight:500;font-size:.8rem;color:#888;display:block}
 .upcoming-card .up-channel{flex:none;width:48px;text-align:center}
 .upcoming-card .up-channel .logo-pill img{width:40px;height:40px}
-.upcoming-card .up-matchup{display:flex;align-items:center;gap:6px;flex:none}
+.upcoming-card .up-matchup{display:flex;align-items:center;gap:6px}
 .upcoming-card .up-logo{width:40px;height:40px;object-fit:contain;flex-shrink:0;border-radius:0}
-.upcoming-card .up-at{font-size:.72rem;font-weight:700;color:#999;text-transform:uppercase}
+.upcoming-card .up-at{font-size:.72rem;font-weight:700;color:#999;text-transform:uppercase;width:20px;text-align:center;flex-shrink:0}
 .upcoming-card .up-opp-name{font-weight:600;font-size:.92rem;flex:1}
 .at-vs{font-size:.72rem;font-weight:700;color:#999;padding:0 2px}
 .sep-arrow{display:inline-block;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid #999;flex-shrink:0;margin-right:-2px}
@@ -166,7 +166,7 @@ td.opp{line-height:1.3;vertical-align:middle}
   .costcard .svc{flex-wrap:wrap}
   .teamhead{padding:10px 12px}
   .item{padding:10px 8px}
-  .upcoming-card{flex-wrap:wrap;gap:8px;padding:10px 12px}
+  .upcoming-card{grid-template-columns:70px 32px 112px 1fr;gap:8px;padding:10px 12px}
   .upcoming-card .up-date{min-width:70px;font-size:.82rem}
   .upcoming-card .up-logo{width:32px;height:32px}
   .upcoming-card .up-opp-name{font-size:.84rem}
@@ -185,7 +185,7 @@ td.opp{line-height:1.3;vertical-align:middle}
   td.app{width:38px}
   .sep-arrow{border-top-width:5px;border-bottom-width:5px;border-left-width:7px}
   td.app .logo-pill img{width:28px;height:28px}
-  .upcoming-card{padding:8px 10px;gap:6px}
+  .upcoming-card{grid-template-columns:60px 32px 96px 1fr;padding:8px 10px;gap:6px}
   .upcoming-card .up-date{min-width:60px;font-size:.78rem}
   .upcoming-card .up-logo{width:28px;height:28px}
   .upcoming-card .up-channel{width:32px}
@@ -640,7 +640,7 @@ function loadBuzz(){
       var p=posts[i];
       var wm='';
       var L=customLogos[p.team];
-      if(L&&L.src) wm=' style="background-image:linear-gradient(rgba(255,255,255,.93),rgba(255,255,255,.93)),url('+L.src+');background-size:auto 85%,auto 85%;background-position:center,right -14px bottom -14px;background-repeat:no-repeat;background-size:cover,auto 85%"';
+      if(L&&L.src) wm=' style="background-image:linear-gradient(rgba(255,255,255,.93),rgba(255,255,255,.93)),url('+L.src+');background-size:cover,auto 55%;background-position:center,center;background-repeat:no-repeat"';
       h+='<a class="buzz-card" data-url="'+esc(p.url)+'" href="'+esc(p.url)+'" target="_blank" rel="noopener"'+wm+'>'+
         '<span class="buzz-tag '+p.team+'">'+esc(p.src)+'</span>'+
         (p.thumb?'<img class="buzz-thumb" src="'+esc(p.thumb)+'" alt="">':'')+
