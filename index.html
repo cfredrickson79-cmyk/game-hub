@@ -151,6 +151,8 @@ td.opp{line-height:1.3;vertical-align:middle}
 .buzz-overlay button{border:none;border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;font-size:.85rem}
 .buzz-hide-btn{background:#c00;color:#fff}
 .buzz-keep-btn{background:#eee;color:#333}
+tr.played{opacity:.45;cursor:pointer}
+tr.played:hover{opacity:.7}
 .up-header{font-size:1rem;margin:0 0 10px}
 /* Phone */
 @media(max-width:720px){
@@ -406,8 +408,21 @@ function fillTable(id,rows,team){
   var h='';
   var tl=customLogos[team];
   var arrow='<span class="sep-arrow"></span>';
+  var CAL_M={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  var calNow=new Date();
+  var calToday=new Date(calNow.getFullYear(),calNow.getMonth(),calNow.getDate());
+  function calDate(s){
+    var p=s.split(' ');
+    if(p.length<3) return null;
+    var mo=CAL_M[p[1]];
+    if(mo===undefined) return null;
+    return new Date(mo<6?2027:2026,mo,parseInt(p[2]));
+  }
   for(var i=0;i<rows.length;i++){
     var r=rows[i];
+    var gd=calDate(r[0]);
+    var played=!!(gd&&gd<calToday);
+    var gymd=gd?(''+(gd.getFullYear()*10000+(gd.getMonth()+1)*100+gd.getDate())):'';
     var isAway=r[1].indexOf('at ')===0;
     var oppName=r[1].replace(/^(vs |at )/,'');
     var oLogo='';
@@ -418,11 +433,35 @@ function fillTable(id,rows,team){
     var tLogo='';
     if(tl&&tl.src) tLogo="<img src='"+tl.src+"' class='cal-logo'>";
     var visLogo=isAway?tLogo:oLogo, homeLogo=isAway?oLogo:tLogo;
-    h+='<tr><td class="date">'+r[0]+'<span class="time">'+r[2]+' MT</span></td><td class="app">'+appPill(r[3])+'</td><td class="opp"><div style="display:flex;align-items:center;gap:8px">'+arrow+visLogo+'<span class="at-vs">'+(isAway?'at':'vs')+'</span>'+homeLogo+'<span>'+oppName+'</span></div></td></tr>';
+    h+='<tr'+(played?' class="played" data-team="'+team+'" data-gdate="'+gymd+'" title="Tap for game recap"':'')+'><td class="date">'+r[0]+'<span class="time">'+r[2]+' MT</span></td><td class="app">'+appPill(r[3])+'</td><td class="opp"><div style="display:flex;align-items:center;gap:8px">'+arrow+visLogo+'<span class="at-vs">'+(isAway?'at':'vs')+'</span>'+homeLogo+'<span>'+oppName+'</span></div></td></tr>';
   }
   document.getElementById(id).innerHTML=h;
 }
-function renderTables(){fillTable('steelTable',steel,'pitt');fillTable('uteTable',utes,'utes');}
+function renderTables(){fillTable('steelTable',steel,'pitt');fillTable('uteTable',utes,'utes');wireRecaps();}
+function wireRecaps(){
+  document.querySelectorAll('tr.played').forEach(function(row){
+    row.addEventListener('click',function(){
+      var team=row.getAttribute('data-team'), d=row.getAttribute('data-gdate');
+      if(!d) return;
+      var w=window.open('','_blank'); // open synchronously so the popup isn't blocked
+      var fallback='https://www.google.com/search?q='+encodeURIComponent((team==='pitt'?'Pittsburgh Steelers':'Utah Utes football')+' recap '+d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6));
+      var api=(team==='pitt')
+        ?'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates='+d
+        :'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates='+d+'&groups=80';
+      var abbr=(team==='pitt')?'PIT':'UTAH';
+      fetch(api).then(function(r){return r.json();}).then(function(data){
+        var ev=(data.events||[]).find(function(e){
+          try{return e.competitions[0].competitors.some(function(c){return c.team.abbreviation===abbr;});}catch(x){return false;}
+        });
+        var link=null;
+        if(ev&&ev.links){
+          link=ev.links.find(function(l){return l.rel&&l.rel.indexOf('recap')>=0;})||ev.links.find(function(l){return l.rel&&l.rel.indexOf('summary')>=0;});
+        }
+        w.location=(link&&link.href)?link.href:fallback;
+      }).catch(function(){ w.location=fallback; });
+    });
+  });
+}
 renderTables();
 
 /* --- Collapsible team sections --- */
@@ -452,7 +491,7 @@ function renderComingUp(){
     var m=MONTHS[parts[1]];
     if(m===undefined) return null;
     var d=parseInt(parts[2]);
-    return new Date(YEAR,m,d);
+    return new Date(m<6?YEAR+1:YEAR,m,d);
   }
   var now=new Date();
 
