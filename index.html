@@ -511,8 +511,8 @@ function loadBuzz(){
   box.setAttribute('data-loaded','1');
   // Each feed: any RSS url; tag shown on the card; team colors the tag (pitt gold / utes red)
   var FEEDS=[
-    {url:'https://www.reddit.com/r/steelers/top/.rss?t=week&limit=25',team:'pitt',tag:'r/steelers',max:25},
-    {url:'https://www.reddit.com/r/UtahUtes/top/.rss?t=week&limit=25',team:'utes',tag:'r/UtahUtes',max:25},
+    {url:'https://www.reddit.com/r/steelers/hot/.rss',team:'pitt',tag:'r/steelers',max:10},
+    {url:'https://www.reddit.com/r/UtahUtes/hot/.rss',team:'utes',tag:'r/UtahUtes',max:10},
     {url:'https://news.google.com/rss/search?q=Pittsburgh+Steelers&hl=en-US&gl=US&ceid=US:en',team:'pitt',tag:'news'},
     {url:'https://news.google.com/rss/search?q=%22Utah+Utes%22+football&hl=en-US&gl=US&ceid=US:en',team:'utes',tag:'news'},
     {url:'https://www.behindthesteelcurtain.com/rss/current.xml',team:'pitt',tag:'blog',max:5},
