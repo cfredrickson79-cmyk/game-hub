@@ -175,7 +175,11 @@ td.opp{line-height:1.3;vertical-align:middle}
 .kick-card.utes .kick-ghost{color:#3a1010}
 .kick-lbl{display:block;font-size:.56rem;letter-spacing:.1em;color:#8a8f98;margin-top:3px}
 #coming-up-content{display:none}
-.head-clock{font-family:'DSEG7';font-weight:bold;font-size:15px;color:#fff;margin-left:auto;margin-right:10px;letter-spacing:1px}
+.head-clock{display:flex;align-items:flex-start;gap:2px;margin-left:auto;margin-right:10px}
+.head-clock .hc-g{display:flex;flex-direction:column;align-items:center}
+.head-clock .hc-d,.head-clock .hc-c{font-family:'DSEG7';font-weight:bold;font-size:15px;color:#fff;letter-spacing:1px}
+.head-clock .hc-l{font-size:.48rem;letter-spacing:.08em;color:rgba(255,255,255,.75);margin-top:1px}
+.wk-lbl{color:#666;font-weight:600}
 tr.played{opacity:.45;cursor:pointer}
 tr.played:hover{opacity:.7}
 .up-header{font-size:1rem;margin:0 0 10px}
@@ -521,8 +525,18 @@ function fillTable(id,rows,team){
     if(mo===undefined) return null;
     return new Date(mo<6?2027:2026,mo,parseInt(p[2]));
   }
+  var wkNum=0;
   for(var i=0;i<rows.length;i++){
     var r=rows[i];
+    var isPre=/\(preseason\)/i.test(r[1]);
+    var wkLbl;
+    if(isPre) wkLbl='Preseason';
+    else if(/Big 12/i.test(r[1])) wkLbl='Big 12 Champ';
+    else {
+      wkNum++; wkLbl='Week '+wkNum;
+      var an=/\(([^)]+)\)/.exec(r[1]);
+      if(an) wkLbl+=' \u00b7 '+an[1];
+    }
     var gd=calDate(r[0]);
     var played=!!(gd&&gd<calToday);
     var gymd=gd?(''+(gd.getFullYear()*10000+(gd.getMonth()+1)*100+gd.getDate())):'';
@@ -536,7 +550,7 @@ function fillTable(id,rows,team){
     var tLogo='';
     if(tl&&tl.src) tLogo="<img src='"+tl.src+"' class='cal-logo'>";
     var visLogo=isAway?tLogo:oLogo, homeLogo=isAway?oLogo:tLogo;
-    h+='<tr'+(played?' class="played" data-team="'+team+'" data-gdate="'+gymd+'" title="Tap for game recap"':'')+'><td class="date">'+r[0]+'<span class="time">'+r[2]+' MT</span></td><td class="app">'+appPill(r[3])+'</td><td class="opp"><div style="display:flex;align-items:center;gap:8px">'+arrow+visLogo+'<span class="at-vs">'+(isAway?'at':'vs')+'</span>'+homeLogo+'<span>'+oppName+'</span></div></td></tr>';
+    h+='<tr'+(played?' class="played" data-team="'+team+'" data-gdate="'+gymd+'" title="Tap for game recap"':'')+'><td class="date">'+r[0]+'<span class="time">'+r[2]+' MT</span></td><td class="app">'+appPill(r[3])+'</td><td class="opp"><div style="display:flex;align-items:center;gap:8px">'+arrow+visLogo+'<span class="at-vs">'+(isAway?'at':'vs')+'</span>'+homeLogo+'<span class="wk-lbl">'+wkLbl+'</span></div></td></tr>';
   }
   document.getElementById(id).innerHTML=h;
 }
@@ -711,7 +725,12 @@ function renderKickClocks(){
     var kk=KICKS[SECMAP[id]];
     if(!kk) return;
     var sp=th.querySelector('.head-clock');
-    if(!sp){ sp=document.createElement('span'); sp.className='head-clock'; th.insertBefore(sp,th.querySelector('.collapse-arrow')||null); }
+    if(!sp){
+      sp=document.createElement('span'); sp.className='head-clock';
+      var hcg=function(u,l){return '<span class="hc-g"><span class="hc-d" data-u="'+u+'">00</span><span class="hc-l">'+l+'</span></span>';};
+      sp.innerHTML=hcg('d','DAYS')+'<span class="hc-c">:</span>'+hcg('h','HRS')+'<span class="hc-c">:</span>'+hcg('m','MIN')+'<span class="hc-c">:</span>'+hcg('s','SEC');
+      th.insertBefore(sp,th.querySelector('.collapse-arrow')||null);
+    }
     sp.setAttribute('data-kick',kk);
   });
   function pad(n){return (n<10?'0':'')+n;}
@@ -731,7 +750,8 @@ function renderKickClocks(){
       var d=Math.floor(s/86400);s-=d*86400;
       var hh=Math.floor(s/3600);s-=hh*3600;
       var mn=Math.floor(s/60);
-      el.textContent=pad(d)+':'+pad(hh)+':'+pad(mn)+':'+pad(s-mn*60);
+      var v={d:pad(d),h:pad(hh),m:pad(mn),s:pad(s-mn*60)};
+      el.querySelectorAll('[data-u]').forEach(function(x){x.textContent=v[x.getAttribute('data-u')];});
     });
   }
   tickClocks();
@@ -766,7 +786,7 @@ function loadBuzz(){
       .then(function(items){
         return items.map(function(it){
           var ts=Date.parse(it.pubDate.replace(' ','T')+'Z');
-          var title=it.title, srcLabel=f.label;
+          var title=dec(it.title), srcLabel=f.label;
           if(!srcLabel){
             var cut=title.lastIndexOf(' - ');
             if(cut>0){ srcLabel=title.slice(cut+3).trim(); title=title.slice(0,cut).trim(); }
@@ -777,6 +797,7 @@ function loadBuzz(){
       }).catch(function(){ return []; });
   }
   function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function dec(s){var d=document.createElement('textarea');d.innerHTML=s||'';return d.value;}
   function ago(ms){
     var m=Math.max(1,Math.round((Date.now()-ms)/60000));
     if(m<60) return m+'m ago';
