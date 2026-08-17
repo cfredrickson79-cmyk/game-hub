@@ -175,6 +175,7 @@ td.opp{line-height:1.3;vertical-align:middle}
 .kick-card.utes .kick-ghost{color:#3a1010}
 .kick-lbl{display:block;font-size:.56rem;letter-spacing:.1em;color:#8a8f98;margin-top:3px}
 #coming-up-content{display:none}
+.head-clock{font-family:'DSEG7';font-weight:bold;font-size:15px;color:#fff;margin-left:auto;margin-right:10px;letter-spacing:1px}
 tr.played{opacity:.45;cursor:pointer}
 tr.played:hover{opacity:.7}
 .up-header{font-size:1rem;margin:0 0 10px}
@@ -598,6 +599,7 @@ function renderKickClocks(){
   var COLON='<span class="kick-colon">:</span>';
   var TEAMS=[{key:'pitt',label:'Steelers',arr:steel},{key:'utes',label:'Utes',arr:utes}];
   var now=Date.now();
+  var KICKS={};
   var h='';
   TEAMS.forEach(function(t){
     var next=null;
@@ -606,6 +608,7 @@ function renderKickClocks(){
       if(k&&k.getTime()+14400000>now){ next={k:k,r:t.arr[i]}; break; }
     }
     if(!next) return;
+    KICKS[t.key]=next.k.getTime();
     var isAway=next.r[1].indexOf('at ')===0;
     var tSrc=TEAMHI[t.key]||((customLogos[t.key]||{}).src);
     var oSrc=oppHi(t.key,next.r[4])||((next.r.length>4&&next.r[4]&&oppLogos[next.r[4]])?oppLogos[next.r[4]].src:null);
@@ -623,6 +626,18 @@ function renderKickClocks(){
       '</div></div>'+homeImg+'</div></div>';
   });
   box.innerHTML=h;
+  var SECMAP={steelTable:'pitt',uteTable:'utes'};
+  Object.keys(SECMAP).forEach(function(id){
+    var tb=document.getElementById(id);
+    if(!tb) return;
+    var th=tb.parentElement.querySelector('.teamhead');
+    if(!th) return;
+    var kk=KICKS[SECMAP[id]];
+    if(!kk) return;
+    var sp=th.querySelector('.head-clock');
+    if(!sp){ sp=document.createElement('span'); sp.className='head-clock'; th.insertBefore(sp,th.querySelector('.collapse-arrow')||null); }
+    sp.setAttribute('data-kick',kk);
+  });
   function pad(n){return (n<10?'0':'')+n;}
   function tickClocks(){
     box.querySelectorAll('.kick-card').forEach(function(card){
@@ -634,6 +649,13 @@ function renderKickClocks(){
       card.querySelector('.kh').textContent=pad(hh);
       card.querySelector('.km').textContent=pad(mn);
       card.querySelector('.ks').textContent=pad(s-mn*60);
+    });
+    document.querySelectorAll('.head-clock').forEach(function(el){
+      var s=Math.max(0,Math.floor((parseInt(el.getAttribute('data-kick'))-Date.now())/1000));
+      var d=Math.floor(s/86400);s-=d*86400;
+      var hh=Math.floor(s/3600);s-=hh*3600;
+      var mn=Math.floor(s/60);
+      el.textContent=pad(d)+':'+pad(hh)+':'+pad(mn)+':'+pad(s-mn*60);
     });
   }
   tickClocks();
