@@ -668,6 +668,7 @@ function renderKickClocks(){
   var NFLABBR={green_bay:'gb',ny_jets:'nyj',buffalo:'buf',atlanta:'atl',new_england:'ne',cincinnati:'cin',cleveland:'cle',indianapolis:'ind',tampa_bay:'tb',new_orleans:'no',philadelphia:'phi',denver:'den',baltimore:'bal',carolina:'car',jacksonville:'jax',tennessee:'ten',houston:'hou'};
   var HIRES_CFB={idaho:70,arkansas:8,utah_state:328,iowa_state:66,kansas:2305,colorado:38,houston_c:248,cincinnati_c:2132,byu:252,arizona:12,tcu:2628,west_virginia:277};
   var TEAMHI={pitt:'https://a.espncdn.com/i/teamlogos/nfl/500/pit.png',utes:'https://a.espncdn.com/i/teamlogos/ncaa/500/254.png'};
+  var NFLNICK={green_bay:'Packers',ny_jets:'Jets',buffalo:'Bills',atlanta:'Falcons',new_england:'Patriots',cincinnati:'Bengals',cleveland:'Browns',indianapolis:'Colts',tampa_bay:'Buccaneers',new_orleans:'Saints',philadelphia:'Eagles',denver:'Broncos',baltimore:'Ravens',carolina:'Panthers',jacksonville:'Jaguars',tennessee:'Titans',houston:'Texans'};
   function oppHi(tkey,key){
     if(tkey==='pitt') return NFLABBR[key]?'https://a.espncdn.com/i/teamlogos/nfl/500/'+NFLABBR[key]+'.png':null;
     return HIRES_CFB[key]?'https://a.espncdn.com/i/teamlogos/ncaa/500/'+HIRES_CFB[key]+'.png':null;
@@ -706,9 +707,11 @@ function renderKickClocks(){
     var oImg=oSrc?'<img class="kick-flank" src="'+oSrc+'" alt="">':'';
     var visImg=isAway?tImg:oImg, homeImg=isAway?oImg:tImg;
     var svc=(typeof SVC_META!=='undefined'&&SVC_META[next.r[3]])?SVC_META[next.r[3]].label:'';
+    var oppDisp=next.r[1].replace(/^(vs |at )/,'').replace(/\s*\([^)]*\)/g,'').trim();
+    if(t.key==='pitt'&&NFLNICK[next.r[4]]) oppDisp=NFLNICK[next.r[4]];
     h+='<div class="kick-card '+t.key+'" data-kick="'+next.k.getTime()+'">'+
       '<div class="kick-head">'+
-      '<span class="kick-title">'+t.label+' '+(isAway?'at':'vs')+' '+next.r[1].replace(/^(vs |at )/,'')+'</span>'+
+      '<span class="kick-title">'+t.label+' '+(isAway?'at':'vs')+' '+oppDisp+'</span>'+
       '<span class="kick-sub">'+next.r[0]+' &middot; '+next.r[2]+' MT'+(svc?' &middot; '+svc:'')+'</span></div>'+
       '<div class="kick-body">'+visImg+
       '<div class="kick-panel"><div class="kick-row">'+
