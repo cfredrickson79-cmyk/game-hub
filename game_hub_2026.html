@@ -157,6 +157,8 @@ td.opp{line-height:1.3;vertical-align:middle}
 .kick-card{background:#14171c;border:1px solid #2a2f38;border-radius:8px;padding:8px 12px}
 .kick-head{display:flex;align-items:center;gap:7px;margin-bottom:6px}
 .kick-head img{width:34px;height:34px;object-fit:contain}
+.kick-body{display:flex;align-items:center;justify-content:center;gap:16px}
+.kick-flank{width:58px;height:58px;object-fit:contain;flex-shrink:0}
 .kick-at{font-size:.6rem;color:#8a8f98;font-weight:700;text-transform:uppercase}
 .kick-title{font-size:.84rem;font-weight:700;color:#e8e6e3;flex:1;margin-left:3px}
 .kick-sub{font-size:.66rem;color:#8a8f98;text-align:right}
@@ -648,6 +650,14 @@ function renderKickClocks(){
   var box=document.getElementById('kick-clocks');
   if(!box) return;
   var KM={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  var NFLBASE='https://raw.githubusercontent.com/cfredrickson79-cmyk/game-hub/main/logos/nfl/';
+  var HIRES_NFL={green_bay:'packers.png',ny_jets:'9116_new_york_jets-primary-2019.png',buffalo:'buffalo_bills_logo_primary_19747050.png',atlanta:'atlanta_falcons_logo_primary_20032894.png',new_england:'new_england_patriots_logo_primary_20005480.png',cincinnati:'cincinnati_bengals_logo_primary_2021_sportslogosnet-2049.png',cleveland:'cleveland_browns_logo_primary_2024_sportslogosnet-6696.png',indianapolis:'indianapolis_colts_logo_primary_20043652.png',tampa_bay:'8363_tampa_bay_buccaneers-primary-2020.png',new_orleans:'saints.png',philadelphia:'philadelphia_eagles_logo_primary_19964867.png',denver:'denver_broncos_logo_primary_1999_sportslogosnet-4218.png',baltimore:'baltimore_ravens_logo_primary_19996038.png',carolina:'carolina_panthers_logo_primary_20125906.png',jacksonville:'jacksonville_jaguars_logo_primary_20132171.png',tennessee:'tennessee-titans-logo-primary-1999-6125.png',houston:'houston_texans_logo_primary_20021231.png'};
+  var HIRES_CFB={idaho:70,arkansas:8,utah_state:328,iowa_state:66,kansas:2305,colorado:38,houston_c:248,cincinnati_c:2132,byu:252,arizona:12,tcu:2628,west_virginia:277};
+  var TEAMHI={pitt:NFLBASE+'steelers.png',utes:'https://a.espncdn.com/i/teamlogos/ncaa/500/254.png'};
+  function oppHi(tkey,key){
+    if(tkey==='pitt') return HIRES_NFL[key]?NFLBASE+HIRES_NFL[key]:null;
+    return HIRES_CFB[key]?'https://a.espncdn.com/i/teamlogos/ncaa/500/'+HIRES_CFB[key]+'.png':null;
+  }
   function kickoff(dstr,tstr){
     var p=dstr.split(' ');
     if(p.length<3) return null;
@@ -673,21 +683,21 @@ function renderKickClocks(){
       if(k&&k.getTime()+14400000>now){ next={k:k,r:t.arr[i]}; break; }
     }
     if(!next) return;
-    var L=customLogos[t.key];
     var isAway=next.r[1].indexOf('at ')===0;
-    var oImg='';
-    if(next.r.length>4&&next.r[4]&&oppLogos[next.r[4]]) oImg='<img src="'+oppLogos[next.r[4]].src+'" alt="">';
-    var svc=(typeof SVC_META!=='undefined'&&SVC_META[next.r[3]])?SVC_META[next.r[3]].label:'';
-    var tImg=(L&&L.src)?'<img src="'+L.src+'" alt="'+t.label+'">':'';
+    var tSrc=TEAMHI[t.key]||((customLogos[t.key]||{}).src);
+    var oSrc=oppHi(t.key,next.r[4])||((next.r.length>4&&next.r[4]&&oppLogos[next.r[4]])?oppLogos[next.r[4]].src:null);
+    var tImg=tSrc?'<img class="kick-flank" src="'+tSrc+'" alt="'+t.label+'">':'';
+    var oImg=oSrc?'<img class="kick-flank" src="'+oSrc+'" alt="">':'';
     var visImg=isAway?tImg:oImg, homeImg=isAway?oImg:tImg;
+    var svc=(typeof SVC_META!=='undefined'&&SVC_META[next.r[3]])?SVC_META[next.r[3]].label:'';
     h+='<div class="kick-card '+t.key+'" data-kick="'+next.k.getTime()+'">'+
-      '<div class="kick-head">'+visImg+
-      '<span class="kick-at">'+(isAway?'at':'vs')+'</span>'+homeImg+
-      '<span class="kick-title">'+next.r[1].replace(/^(vs |at )/,'')+'</span>'+
+      '<div class="kick-head">'+
+      '<span class="kick-title">'+t.label+' '+(isAway?'at':'vs')+' '+next.r[1].replace(/^(vs |at )/,'')+'</span>'+
       '<span class="kick-sub">'+next.r[0]+' &middot; '+next.r[2]+' MT'+(svc?' &middot; '+svc:'')+'</span></div>'+
+      '<div class="kick-body">'+visImg+
       '<div class="kick-panel"><div class="kick-row">'+
       grp('kd','DAYS')+COLON+grp('kh','HRS')+COLON+grp('km','MIN')+COLON+grp('ks','SEC')+
-      '</div></div></div>';
+      '</div></div>'+homeImg+'</div></div>';
   });
   box.innerHTML=h;
   function pad(n){return (n<10?'0':'')+n;}
