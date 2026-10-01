@@ -209,12 +209,11 @@ fin(1,"CLE","JAX","JAX","JAX 34-10 CLE");fin(2,"CLE","TB","CLE","CLE 23-19 TB");
 function currentWeek(){const now=new Date();for(let w=1;w<=18;w++){if(now<=new Date(2026,8,14+7*(w-1),23,59,59))return w;}return 18;}
 const CUR_WK=currentWeek();
 
-/* ---------- Your picks persist on this device ---------- */
+/* ---------- Picks start fresh on every load (shared family app); clear any picks saved by older versions ---------- */
 const KEY="afcnPicks";
 let picks={};
-try{const p=JSON.parse(localStorage.getItem(KEY)||"{}")||{};
-  for(const id in p){const g=GAMES.find(x=>x.id===id);if(g&&(p[id]===g.home||p[id]===g.away))picks[id]=p[id];}}catch(e){}
-function savePicks(){try{localStorage.setItem(KEY,JSON.stringify(picks));}catch(e){}}
+try{localStorage.removeItem(KEY);}catch(e){}
+function savePicks(){}
 let results={};
 function merge(){results=Object.assign({},picks);for(const id in FINAL)results[id]=FINAL[id].w;}
 function clearPicks(){picks={};savePicks();render(true);}
@@ -333,7 +332,7 @@ async function refreshFinals(){
   if(changed)render(true);else updateLegend();
 }
 function updateLegend(){document.getElementById("legend").innerHTML=
-  `Tap a team's logo to pick the winner; tap it again to clear. Your picks save on this device. Finished games lock with the real score and show whether your pick was right. `+
+  `Tap a team's logo to pick the winner; tap it again to clear. Picks reset when the page reloads. Finished games lock with the real score and show whether your pick was right. `+
   `<b>DIV</b> = record vs AFC North, <b>GB</b> = games behind. Tiebreakers in order: <b>head-to-head › division › conference</b>. ★ = division game.<br>${liveNote}`;}
 
 /* ---------- Opponents' real records: a loose guide, not affected by your picks ---------- */
