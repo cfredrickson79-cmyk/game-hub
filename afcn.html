@@ -118,7 +118,7 @@
   .side.locked{cursor:default}
   .side.locked:hover{background:transparent;border-color:transparent}
   .mid{display:flex; flex-direction:column; align-items:center; gap:2px}
-  .mid .at{font:700 .72rem var(--orb); color:#67738c}
+  .mid .at{font:700 .58rem/1.3 var(--orb); letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; color:#8794ab}
   .mid .sc{font:700 .58rem var(--font); color:#9aa6bc; white-space:nowrap}
   .mid .lk{font:600 .54rem var(--font); letter-spacing:.1em; text-transform:uppercase; color:#6d7a93}
   .mid .lk.mine{color:var(--gold)} .mid .lk.ok{color:#8ce292} .mid .lk.no{color:#f48c94}
@@ -127,8 +127,7 @@
 
   .legend{font:400 .72rem/1.55 var(--font); color:#8794ab; margin:18px 4px 0}
   .legend b{color:#c3cbd8}
-  .game .when{position:absolute; top:3px; left:0; right:0; text-align:center; font:700 .5rem/1 var(--orb); letter-spacing:.14em; text-transform:uppercase; color:#8794ab; pointer-events:none}
-  .wk.cur .game .when{color:var(--gold)}
+  .wk.cur .mid .at{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -291,12 +290,12 @@ function buildSched(){
     GAMES.filter(g=>g.wk===wk).sort((a,b)=>(a.div?0:1)-(b.div?0:1)).forEach(g=>{
       const tc=s=>isTeam(s)?TEAMS[s].tc:(OPP[s]||"#55607a");
       const gm=document.createElement("div");gm.className="game glass";
-      gm.innerHTML=`<div class="when"></div><div class="side away" style="--tc:${tc(g.away)}">${logo(g.away)}<div><div class="nm">${g.away}</div><div class="rec" data-rec="${g.away}"></div></div></div>
+      gm.innerHTML=`<div class="side away" style="--tc:${tc(g.away)}">${logo(g.away)}<div><div class="nm">${g.away}</div><div class="rec" data-rec="${g.away}"></div></div></div>
         <div class="mid"><div class="at">@</div><div class="sc"></div><div class="lk"></div>${g.div?'<div class="divtag">DIV ★</div>':''}</div>
         <div class="side home" style="--tc:${tc(g.home)}">${logo(g.home)}<div><div class="nm">${g.home}</div><div class="rec" data-rec="${g.home}"></div></div></div>`;
       const a=gm.querySelector(".side.away"),h=gm.querySelector(".side.home");
       a.addEventListener("click",()=>pick(g.id,g.away));h.addEventListener("click",()=>pick(g.id,g.home));
-      ref[g.id]={a,h,gm,sc:gm.querySelector(".sc"),lk:gm.querySelector(".lk"),when:gm.querySelector(".when")};wd.appendChild(gm);});
+      ref[g.id]={a,h,gm,sc:gm.querySelector(".sc"),lk:gm.querySelector(".lk"),at:gm.querySelector(".at")};wd.appendChild(gm);});
     schedBox.appendChild(wd);});
 }
 function refreshSched(){
@@ -305,7 +304,7 @@ function refreshSched(){
     r.h.classList.toggle("win",win===g.home);r.h.classList.toggle("lose",!!win&&win!==g.home);
     r.a.classList.toggle("locked",!!f);r.h.classList.toggle("locked",!!f);
     r.gm.classList.toggle("picked",!!p&&!f);
-    r.when.textContent=whenText(g);r.sc.textContent=f?f.sc:"";r.lk.className="lk";
+    r.at.textContent=whenText(g)||"@";r.sc.textContent=f?f.sc:"";r.lk.className="lk";
     if(f){r.lk.textContent=p?(p===f.w?"final · you ✓":"final · you ✗"):"final";if(p)r.lk.classList.add(p===f.w?"ok":"no");}
     else if(p){r.lk.textContent="your pick";r.lk.classList.add("mine");}
     else r.lk.textContent="";});
@@ -385,9 +384,9 @@ const WHEN={};
 ].forEach(r=>{const md=r[3]?r[3].split("-"):null;WHEN[wkey(r[0],r[1],r[2])]={m:md?+md[0]:0,d:md?+md[1]:0,t:r[4]};});
 const WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function whenText(g){const w=WHEN[wkey(g.wk,g.home,g.away)];if(!w)return "";
-  if(!w.m)return "Date TBD";
+  if(!w.m)return "TBD";
   const dt=new Date(w.m<6?2027:2026,w.m-1,w.d),ds=`${WD[dt.getDay()]} ${MN[w.m-1]} ${w.d}`;
-  return ds;}
+  return `${MN[w.m-1]} ${w.d}`;}
 async function refreshWhen(){let changed=false;
   const fmt=new Intl.DateTimeFormat("en-US",{timeZone:"America/Denver",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:true});
   await Promise.all(ORDER.map(async t=>{try{
