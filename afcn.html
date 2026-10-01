@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AFC North What-If — Glass</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{ --gold:#FFB612; --red:#C60C30; --blue:#00539B;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; --orb:'Orbitron',var(--font);}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--font); color:#eef2f8; min-height:100vh; position:relative;
+    background:
+      radial-gradient(80% 48% at 12% -8%, rgba(255,182,18,.10), transparent 55%),
+      radial-gradient(80% 48% at 100% 6%, rgba(198,12,48,.09), transparent 55%),
+      linear-gradient(160deg,#0a0c12 0%,#05060a 45%,#010203 100%);}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,0) 24%, rgba(255,255,255,0) 68%, rgba(255,255,255,.035)),
+      repeating-linear-gradient(135deg, rgba(255,255,255,.015) 0 1px, transparent 1px 10px);}
+  .wrap{position:relative; z-index:1}
+  .wrap{max-width:860px; margin:0 auto; padding:14px 14px 40px;}
+  .mast{display:flex; align-items:center; gap:11px; padding:4px 2px 2px}
+  .mast .bars{display:flex; gap:4px}
+  .mast .bars i{width:9px;height:24px;border-radius:2px;display:block}
+  .mast h1{font:700 1.02rem/1.15 var(--orb); letter-spacing:.04em; margin:0}
+  .mast h1 small{display:block; font:600 .62rem/1.4 var(--font); color:#8794ab; letter-spacing:.16em; text-transform:uppercase; margin-top:3px}
+
+  /* ============ GLASS RECIPE (carried from dashboard house style) ============ */
+  .glass{position:relative; overflow:hidden; border-radius:14px; border:1px solid rgba(242,242,242,.5);
+    background:
+      repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,rgba(255,255,255,0) 1px 7px),
+      linear-gradient(100deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    box-shadow:0 0 0 .5px rgba(140,140,140,.55), inset 0 1px 0 rgba(255,255,255,.45), 0 6px 18px rgba(0,0,0,.45);}
+  .glass::before{content:""; position:absolute; top:-70%; left:-15%; width:135%; height:120%; border-radius:50%;
+    transform:rotate(-3deg); background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,.04)); pointer-events:none; z-index:0}
+  .glass::after{content:""; position:absolute; left:16px; right:16px; bottom:4px; height:2px; border-radius:2px;
+    background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.5) 35%,rgba(255,255,255,.7) 85%,rgba(255,255,255,.18)); pointer-events:none; z-index:0}
+  .glass>*{position:relative; z-index:1}
+
+  /* ============ STANDINGS (sticky) ============ */
+  .standings{position:sticky; top:8px; z-index:20; padding:10px 10px 12px; margin:14px 0 18px;
+    background:
+      repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 1px,rgba(255,255,255,0) 1px 7px),
+      linear-gradient(180deg, rgba(48,53,68,.5), rgba(8,10,16,.64));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 12px 32px rgba(0,0,0,.62);}
+  .standings h2{font:600 .64rem/1 var(--orb); letter-spacing:.18em; text-transform:uppercase; color:#9aa6bc; margin:2px 4px 10px; display:flex; justify-content:space-between}
+  .stHead{display:grid; grid-template-columns:26px 1fr 58px 50px 52px 40px; gap:8px; padding:0 10px 7px;
+    font:700 .58rem/1 var(--font); letter-spacing:.1em; text-transform:uppercase; color:#7b88a0}
+  .stHead .c{text-align:center}
+  #rows{position:relative}
+  .trow{display:grid; grid-template-columns:26px 1fr 58px 50px 52px 40px; gap:8px; align-items:center;
+    padding:11px 11px; margin:9px 0; border-radius:13px; will-change:transform; position:relative; overflow:hidden;
+    border:1px solid rgba(255,255,255,.17);
+    background:
+      repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 1px,rgba(255,255,255,0) 1px 7px),
+      linear-gradient(110deg, color-mix(in srgb, var(--tc) 40%, rgba(30,34,44,.65)), rgba(14,16,24,.6));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(0,0,0,.55), 0 8px 20px rgba(0,0,0,.55), 0 2px 5px rgba(0,0,0,.45);}
+  .trow::before{content:""; position:absolute; top:-70%; left:-15%; width:135%; height:120%; border-radius:50%;
+    transform:rotate(-3deg); background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,.03)); pointer-events:none; z-index:0}
+  .trow>*{position:relative; z-index:1}
+  .trow.lead{border-color:rgba(255,182,18,.55);
+    background:
+      repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,rgba(255,255,255,0) 1px 7px),
+      linear-gradient(110deg, color-mix(in srgb, var(--tc) 46%, rgba(255,182,18,.18)), rgba(16,18,26,.6));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(0,0,0,.5), 0 10px 26px rgba(255,182,18,.22), 0 2px 6px rgba(0,0,0,.5)}
+  .trow.moved{animation:pop .5s ease}
+  @keyframes pop{0%{box-shadow:0 0 0 0 rgba(255,182,18,.5)}100%{box-shadow:0 0 0 12px rgba(255,182,18,0)}}
+  .rk{font:900 1rem var(--orb); text-align:center; color:#5d6a85}
+  .trow.lead .rk{color:var(--gold); text-shadow:0 0 10px rgba(255,182,18,.6)}
+  .teamcell{display:flex; align-items:center; gap:10px; min-width:0}
+  .rec{font:800 1.02rem var(--orb); font-variant-numeric:tabular-nums; text-align:center}
+  .pct{font:700 .92rem var(--orb); font-variant-numeric:tabular-nums; text-align:center; color:var(--gold)}
+  .sub{font:600 .84rem var(--font); font-variant-numeric:tabular-nums; text-align:center; color:#aeb9cd}
+  .gb{font:700 .86rem var(--font); text-align:center; color:#9aa6bc}
+  @media(max-width:540px){ .stHead,.trow{grid-template-columns:22px 1fr 50px 44px 0 34px} .hideSm{display:none!important} }
+
+  /* logo chip */
+  .lg{--bg:#55607a; width:30px;height:30px;border-radius:50%; flex:0 0 auto; position:relative; overflow:hidden;
+    background:radial-gradient(circle at 38% 30%, #fff, #e7ebf1 70%); box-shadow:0 1px 3px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.6);
+    display:flex; align-items:center; justify-content:center}
+  .lg img{width:100%;height:100%;object-fit:contain; display:block}
+  .lg b{display:none; font:800 .56rem/1 var(--font); color:#fff}
+  .lg.fb{background:var(--bg)} .lg.fb b{display:block} .lg.fb img{display:none}
+  .lg.big{width:40px;height:40px} .lg.big b{font-size:.66rem}
+  .tabbr{font:800 1rem var(--orb); letter-spacing:.03em}
+  .teamcell .meta small{display:block; font:600 .62rem var(--font); color:#8794ab; letter-spacing:.04em}
+
+  /* ============ CONTROLS ============ */
+  .ctrls{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:4px 2px 12px}
+  .ctrls .lab{font:600 .64rem/1 var(--orb); letter-spacing:.16em; text-transform:uppercase; color:#8794ab; margin-right:auto}
+  .btn{cursor:pointer; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.05); color:#cfd7e6;
+    padding:8px 12px; border-radius:9px; font:600 .78rem var(--font)}
+  .btn:hover{border-color:rgba(255,255,255,.3)}
+
+  /* ============ SCHEDULE ============ */
+  .wk{margin:16px 0 8px}
+  .wk .wkh{display:flex; align-items:center; gap:10px; margin:0 4px 8px}
+  .wk .wkh b{font:700 .72rem var(--orb); letter-spacing:.14em; text-transform:uppercase; color:#aab5c9}
+  .wk .wkh .ln{flex:1; height:1px; background:linear-gradient(90deg,rgba(255,255,255,.14),transparent)}
+  .wk.cur .wkh b{color:var(--gold)}
+  .game{display:grid; grid-template-columns:1fr 54px 1fr; align-items:center; gap:8px; padding:11px 12px; margin:11px 0; border-radius:14px;
+    border:1px solid rgba(255,255,255,.17);
+    background:
+      repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 1px,rgba(255,255,255,0) 1px 7px),
+      linear-gradient(180deg, rgba(64,70,86,.42), rgba(16,18,26,.52));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -1px 0 rgba(0,0,0,.6), 0 12px 26px rgba(0,0,0,.6), 0 2px 6px rgba(0,0,0,.5);}
+  .game:hover{border-color:rgba(255,255,255,.26)}
+  .side{display:flex; align-items:center; gap:9px; cursor:pointer; padding:7px 8px; border-radius:10px; border:1px solid transparent; transition:.14s; min-width:0}
+  .side.home{flex-direction:row-reverse; text-align:right}
+  .side:hover{background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.14)}
+  .side .nm{font:800 .98rem var(--orb); letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .side .rec{font:600 .62rem var(--font); color:#8794ab; text-align:inherit}
+  .side.win{background:color-mix(in srgb,var(--tc) 30%, transparent); border-color:color-mix(in srgb,var(--tc) 70%, transparent)}
+  .side.win .nm{color:#fff}
+  .side.lose{opacity:.42}
+  .side.locked{cursor:default}
+  .side.locked:hover{background:transparent;border-color:transparent}
+  .mid{display:flex; flex-direction:column; align-items:center; gap:2px}
+  .mid .at{font:700 .72rem var(--orb); color:#67738c}
+  .mid .sc{font:700 .58rem var(--font); color:#9aa6bc; white-space:nowrap}
+  .mid .lk{font:600 .54rem var(--font); letter-spacing:.1em; text-transform:uppercase; color:#6d7a93}
+  .mid .pk{font:700 .54rem var(--font); letter-spacing:.08em; text-transform:uppercase; color:var(--gold); opacity:0; transition:.15s}
+  .game.picked .mid .pk{opacity:1}
+  .divtag{font:700 .5rem var(--font); letter-spacing:.08em; color:#101820; background:var(--gold); border-radius:999px; padding:1px 5px}
+
+  .legend{font:400 .72rem/1.55 var(--font); color:#8794ab; margin:18px 4px 0}
+  .legend b{color:#c3cbd8}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mast">
+    <div class="bars"><i style="background:#FFB612"></i><i style="background:#C60C30"></i><i style="background:#00539B"></i></div>
+    <h1>AFC North What-If<small>Pick winners · standings move live</small></h1>
+  </div>
+
+  <div class="standings glass">
+    <h2><span>Standings</span><span id="setcount"></span></h2>
+    <div class="stHead"><div class="c">#</div><div>Team</div><div class="c">W-L</div><div class="c">PCT</div><div class="c hideSm">DIV</div><div class="c">GB</div></div>
+    <div id="rows"></div>
+  </div>
+
+  <div class="ctrls">
+    <span class="lab">Scenario</span>
+    <button class="btn" id="bCur">Reset to current</button>
+    <button class="btn" id="bClr">Clear picks</button>
+    <button class="btn" id="bRnd">Random rest</button>
+  </div>
+
+  <div id="sched"></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<script>
+/* ---------------- Teams ---------------- */
+const TEAMS={
+  PIT:{abbr:"PIT",espn:"pit",tc:"#FFB612",fb:"#101820",fbt:"#FFB612",city:"Pittsburgh"},
+  BAL:{abbr:"BAL",espn:"bal",tc:"#241773",fb:"#241773",fbt:"#ffffff",city:"Baltimore"},
+  CIN:{abbr:"CIN",espn:"cin",tc:"#FB4F14",fb:"#FB4F14",fbt:"#101820",city:"Cincinnati"},
+  CLE:{abbr:"CLE",espn:"cle",tc:"#FF3C00",fb:"#311D00",fbt:"#FF6A33",city:"Cleveland"}
+};
+const ORDER=["PIT","BAL","CIN","CLE"];
+const OPP={ATL:"#A71930",NE:"#002244",IND:"#002C5F",TB:"#D50A0A",NO:"#D3BC8D",PHI:"#004C54",DEN:"#FB4F14",
+  HOU:"#03202F",JAX:"#006778",CAR:"#0085CA",TEN:"#4B92DB",DAL:"#041E42",BUF:"#00338D",LAC:"#0080C6",
+  WAS:"#5A1414",KC:"#E31837",MIA:"#008E97",NYJ:"#125740",LV:"#000000",NYG:"#0B2265"};
+const ESPNFIX={WAS:"wsh"};
+function espnAbbr(a){return (ESPNFIX[a]||a).toLowerCase();}
+
+/* ---------------- Division games [week, home, away] ---------------- */
+const DIV=[
+  [3,"PIT","CIN"],[10,"CIN","PIT"],
+  [4,"CLE","PIT"],[8,"PIT","CLE"],
+  [15,"PIT","BAL"],[18,"BAL","PIT"],
+  [6,"CLE","BAL"],[16,"BAL","CLE"],
+  [7,"BAL","CIN"],[17,"CIN","BAL"],
+  [13,"CLE","CIN"],[18,"CIN","CLE"]
+];
+/* Non-division [week, team, oppAbbr, conf, homeForTeam] */
+const NOND=[
+  [1,"PIT","ATL","NFC",true],[2,"PIT","NE","AFC",false],[5,"PIT","IND","AFC",true],[6,"PIT","TB","NFC",false],
+  [7,"PIT","NO","NFC",false],[11,"PIT","PHI","NFC",false],[12,"PIT","DEN","AFC",true],[13,"PIT","HOU","AFC",true],
+  [14,"PIT","JAX","AFC",false],[16,"PIT","CAR","NFC",true],[17,"PIT","TEN","AFC",false],
+  [1,"BAL","IND","AFC",false],[2,"BAL","NO","NFC",true],[3,"BAL","DAL","NFC",false],[4,"BAL","TEN","AFC",true],
+  [5,"BAL","ATL","NFC",false],[8,"BAL","BUF","AFC",false],[9,"BAL","JAX","AFC",true],[10,"BAL","LAC","AFC",true],
+  [11,"BAL","CAR","NFC",false],[12,"BAL","HOU","AFC",false],[14,"BAL","TB","NFC",true],
+  [1,"CIN","TB","NFC",true],[2,"CIN","HOU","AFC",false],[4,"CIN","JAX","AFC",true],[5,"CIN","MIA","AFC",false],
+  [8,"CIN","TEN","AFC",true],[9,"CIN","ATL","NFC",false],[11,"CIN","WAS","NFC",false],[12,"CIN","NO","NFC",true],
+  [14,"CIN","KC","AFC",true],[15,"CIN","CAR","NFC",false],[16,"CIN","IND","AFC",false],
+  [1,"CLE","JAX","AFC",false],[2,"CLE","TB","NFC",false],[3,"CLE","CAR","NFC",true],[5,"CLE","NYJ","AFC",false],
+  [7,"CLE","TEN","AFC",false],[9,"CLE","NO","NFC",false],[10,"CLE","HOU","AFC",true],[12,"CLE","LV","AFC",true],
+  [14,"CLE","ATL","NFC",true],[15,"CLE","NYG","NFC",false],[17,"CLE","IND","AFC",true]
+];
+
+/* ---------------- Build master game list (schedule order) ---------------- */
+const GAMES=[];
+DIV.forEach((g,i)=>GAMES.push({id:"d"+i, wk:g[0], div:true, home:g[1], away:g[2]}));
+NOND.forEach((g,i)=>{ const home=g[4]?g[1]:g[2], away=g[4]?g[2]:g[1];
+  GAMES.push({id:"n"+i, wk:g[0], div:false, home, away, team:g[1], opp:g[2], conf:g[3], ext:g[2]}); });
+const byId={}; GAMES.forEach(g=>byId[g.id]=g);
+function isTeam(x){return TEAMS[x]!==undefined;}
+
+/* ---------------- Locked (decided) results, as confirmed ---------------- */
+/* value = winner code (team abbr) or opponent abbr */
+const LOCK={};
+function lk(id,w,sc){ LOCK[id]={w,sc}; }
+// map helper: find game id by week + the two sides
+function gid(wk,a,b){ return GAMES.find(g=>g.wk===wk && ((g.home===a&&g.away===b)||(g.home===b&&g.away===a))).id; }
+lk(gid(1,"PIT","ATL"),"PIT","PIT 20-13 ATL");
+lk(gid(2,"PIT","NE"),"NE","NE 20-3 PIT");
+lk(gid(3,"PIT","CIN"),"PIT","PIT 30-27 CIN");
+lk(gid(1,"BAL","IND"),"BAL","BAL 41-23 IND");
+lk(gid(2,"BAL","NO"),"NO","NO 24-17 BAL");
+lk(gid(1,"CIN","TB"),"CIN","CIN 33-27 TB");
+lk(gid(2,"CIN","HOU"),"CIN","CIN 20-6 HOU");
+lk(gid(3,"BAL","DAL"),"BAL","BAL 34-31 DAL");
+lk(gid(1,"CLE","JAX"),"JAX","JAX 34-10 CLE");
+lk(gid(2,"CLE","TB"),"CLE","CLE 23-19 TB");
+lk(gid(3,"CLE","CAR"),"CLE","CLE 21-18 CAR");
+const CUR_WK=4;
+
+/* ---------------- State ---------------- */
+let results={}; // id -> winner side (team abbr or opp abbr)
+function setCurrent(){ results={}; for(const id in LOCK) results[id]=LOCK[id].w; render(true); }
+function clearAll(){ results={}; render(true); }
+function randomRest(){ for(const g of GAMES){ if(LOCK[g.id]){results[g.id]=LOCK[g.id].w; continue;}
+    results[g.id]=Math.random()<0.5?g.home:g.away; } render(true); }
+
+/* ---------------- Engine ---------------- */
+function compute(){
+  const t={}; ORDER.forEach(c=>t[c]={code:c,w:0,l:0,dw:0,dl:0,cw:0,cl:0,h2h:{}});
+  ORDER.forEach(a=>ORDER.forEach(b=>{if(a!==b)t[a].h2h[b]={w:0,l:0}}));
+  GAMES.forEach(g=>{ const win=results[g.id]; if(!win) return;
+    if(g.div){ const lose=(g.home===win?g.away:g.home);
+      t[win].w++; t[win].dw++; t[win].cw++; t[win].h2h[lose].w++;
+      t[lose].l++; t[lose].dl++; t[lose].cl++; t[lose].h2h[win].l++;
+    } else { const tm=t[g.team], won=(win===g.team);
+      if(won){ tm.w++; if(g.conf==="AFC") tm.cw++; } else { tm.l++; if(g.conf==="AFC") tm.cl++; } }
+  });
+  ORDER.forEach(c=>{const x=t[c]; x.gp=x.w+x.l; x.pct=x.gp?x.w/x.gp:0;
+    x.dpct=(x.dw+x.dl)?x.dw/(x.dw+x.dl):0; x.cpct=(x.cw+x.cl)?x.cw/(x.cw+x.cl):0;});
+  const arr=ORDER.map(c=>t[c]);
+  arr.sort((a,b)=>{
+    if(b.pct!==a.pct) return b.pct-a.pct;
+    const h=a.h2h[b.code], n=h.w+h.l; if(n){ const d=h.w-h.l; if(d) return d>0?-1:1; }
+    if(b.dpct!==a.dpct) return b.dpct-a.dpct;
+    if(b.cpct!==a.cpct) return b.cpct-a.cpct;
+    return ORDER.indexOf(a.code)-ORDER.indexOf(b.code);
+  });
+  const lw=arr[0].w, ll=arr[0].l;
+  arr.forEach((x,i)=>{ x.rank=i+1; x.gb=((lw-x.w)+(x.l-ll))/2; x.tiedPrev=i>0&&arr[i-1].pct===x.pct; });
+  arr.allDone=GAMES.every(g=>results[g.id]);
+  arr.decidedBy=(a,b)=>{ const h=a.h2h[b.code]; if((h.w+h.l)&&h.w!==h.l) return "head-to-head";
+    if(a.dpct!==b.dpct) return "division record"; if(a.cpct!==b.cpct) return "conference record"; return "coin flip"; };
+  return arr;
+}
+
+/* ---------------- Logo + helpers ---------------- */
+function logo(side, big){
+  const T=TEAMS[side];
+  const bg = T?T.fb:(OPP[side]||"#55607a");
+  const abbr = T?T.abbr:side;
+  const src = `https://a.espncdn.com/i/teamlogos/nfl/500/${espnAbbr(side)}.png`;
+  return `<span class="lg ${big?'big':''}" style="--bg:${bg}"><img src="${src}" alt="${abbr}" onerror="this.closest('.lg').classList.add('fb')"><b>${abbr}</b></span>`;
+}
+function recText(c){ const s=stat[c]; return s? `${s.w}-${s.l}`:""; }
+
+/* ---------------- Standings render with FLIP ---------------- */
+const rowsBox=document.getElementById("rows");
+let rowEls={}; let stat={};
+function buildRows(){ rowsBox.innerHTML=""; rowEls={};
+  ORDER.forEach(c=>{ const T=TEAMS[c]; const d=document.createElement("div");
+    d.className="trow"; d.style.setProperty("--tc",T.tc);
+    d.innerHTML=`<div class="rk"></div>
+      <div class="teamcell">${logo(c,true)}<div class="meta"><span class="tabbr">${T.abbr}</span><small>${T.city}</small></div></div>
+      <div class="rec"></div><div class="pct"></div><div class="sub hideSm"></div><div class="gb"></div>`;
+    rowEls[c]=d; rowsBox.appendChild(d);
+  });
+}
+function renderStandings(flip){
+  const arr=compute(); const map={}; arr.forEach(x=>map[x.code]=x);
+  stat=map;
+  // FLIP: record old positions
+  const first={}; if(flip) ORDER.forEach(c=>first[c]=rowEls[c].getBoundingClientRect().top);
+  // update content
+  arr.forEach((x,i)=>{ const el=rowEls[x.code];
+    el.classList.toggle("lead", i===0);
+    el.querySelector(".rk").textContent=i+1;
+    el.querySelector(".rec").textContent=`${x.w}-${x.l}`;
+    el.querySelector(".pct").textContent=(x.pct).toFixed(3).replace(/^0/,"");
+    el.querySelector(".sub").textContent=`${x.dw}-${x.dl}`;
+    el.querySelector(".gb").textContent= x.gb<=0?"—":x.gb.toFixed(x.gb%1?1:0);
+  });
+  // reorder DOM
+  arr.forEach(x=>rowsBox.appendChild(rowEls[x.code]));
+  // FLIP: animate
+  if(flip){ ORDER.forEach(c=>{ const el=rowEls[c]; const last=el.getBoundingClientRect().top;
+      const dy=first[c]-last; if(dy){ el.style.transition="none"; el.style.transform=`translateY(${dy}px)`;
+        requestAnimationFrame(()=>{ el.style.transition="transform .42s cubic-bezier(.2,.8,.2,1)"; el.style.transform=""; });
+        el.classList.remove("moved"); void el.offsetWidth; el.classList.add("moved"); } }); }
+  // legend tie note
+  let tie="";
+  for(let i=1;i<arr.length;i++){ if(arr[i].tiedPrev){ tie=`Tie at ${arr[i-1].w}-${arr[i-1].l} broken by <b>${arr.decidedBy(arr[i-1],arr[i])}</b>.`; break; } }
+  const done=GAMES.filter(g=>results[g.id]).length;
+  document.getElementById("setcount").textContent=`${done}/${GAMES.length} games set`;
+  document.getElementById("legend").innerHTML=
+    `<b>DIV</b> record vs AFC North · <b>GB</b> games behind leader · tiebreakers: <b>head-to-head › division › conference</b>. ${tie?'<br>'+tie:''}`+
+    `<br>Decided games are locked with their real scores (through the current week on file; Browns' later early games weren't confirmed by the source, so they're left open). ★ = division game. The “LEAD” team is the current AFC North front-runner.`;
+}
+
+/* ---------------- Schedule render ---------------- */
+const schedBox=document.getElementById("sched");
+const btnRef={}; // id -> {away:el, home:el, game:el}
+function buildSched(){
+  schedBox.innerHTML="";
+  const weeks=[...new Set(GAMES.map(g=>g.wk))].sort((a,b)=>a-b);
+  weeks.forEach(wk=>{
+    const wkGames=GAMES.filter(g=>g.wk===wk).sort((a,b)=> (a.div?0:1)-(b.div?0:1));
+    const wd=document.createElement("div"); wd.className="wk"+(wk===CUR_WK?" cur":"");
+    wd.innerHTML=`<div class="wkh"><b>Week ${wk}${wk===CUR_WK?" · now":""}</b><span class="ln"></span></div>`;
+    wkGames.forEach(g=>{
+      const locked=!!LOCK[g.id];
+      const gm=document.createElement("div"); gm.className="game glass";
+      const awayT=isTeam(g.away), homeT=isTeam(g.home);
+      const aTc=awayT?TEAMS[g.away].tc:(OPP[g.away]||"#55607a");
+      const hTc=homeT?TEAMS[g.home].tc:(OPP[g.home]||"#55607a");
+      gm.innerHTML=`
+        <div class="side away" data-side="away" style="--tc:${aTc}">${logo(g.away)}<div><div class="nm">${g.away}</div><div class="rec" data-rec="${g.away}"></div></div></div>
+        <div class="mid">
+          <div class="at">@</div>
+          ${locked?`<div class="sc">${LOCK[g.id].sc}</div><div class="lk">final</div>`:`<div class="lk" style="opacity:.0">·</div><div class="pk">your pick</div>`}
+          ${g.div?'<div class="divtag">DIV ★</div>':''}
+        </div>
+        <div class="side home" data-side="home" style="--tc:${hTc}">${logo(g.home)}<div><div class="nm">${g.home}</div><div class="rec" data-rec="${g.home}"></div></div></div>`;
+      const aEl=gm.querySelector('.side.away'), hEl=gm.querySelector('.side.home');
+      if(locked){ aEl.classList.add("locked"); hEl.classList.add("locked"); }
+      else{
+        aEl.addEventListener("click",()=>pick(g.id,g.away));
+        hEl.addEventListener("click",()=>pick(g.id,g.home));
+      }
+      btnRef[g.id]={away:aEl,home:hEl,game:gm};
+      wd.appendChild(gm);
+    });
+    schedBox.appendChild(wd);
+  });
+}
+function refreshSched(){
+  GAMES.forEach(g=>{ const r=btnRef[g.id], win=results[g.id];
+    const aWin=win===g.away, hWin=win===g.home;
+    r.away.classList.toggle("win",aWin); r.away.classList.toggle("lose",!!win&&!aWin);
+    r.home.classList.toggle("win",hWin); r.home.classList.toggle("lose",!!win&&!hWin);
+    r.game.classList.toggle("picked",!!win&&!LOCK[g.id]);
+  });
+  // team records on each side chip
+  document.querySelectorAll('[data-rec]').forEach(el=>{ const c=el.getAttribute('data-rec');
+    el.textContent= stat[c]? `${stat[c].w}-${stat[c].l}`:""; });
+}
+
+/* ---------------- Pick ---------------- */
+function pick(id,side){ if(LOCK[id]) return;
+  results[id] = results[id]===side? undefined : side; if(results[id]===undefined) delete results[id];
+  render(true);
+}
+
+/* ---------------- Render ---------------- */
+let built=false;
+function render(flip){ if(!built){ buildRows(); buildSched(); built=true; flip=false; }
+  renderStandings(flip); refreshSched(); }
+
+document.getElementById("bCur").onclick=setCurrent;
+document.getElementById("bClr").onclick=clearAll;
+document.getElementById("bRnd").onclick=randomRest;
+setCurrent();
+</script>
+</body>
+</html>
