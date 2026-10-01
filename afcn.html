@@ -43,7 +43,8 @@
   .standings{position:sticky; top:8px; z-index:20; padding:10px 10px 12px; margin:14px 0 18px;
     background:
       repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 1px,rgba(255,255,255,0) 1px 7px),
-      linear-gradient(180deg, rgba(48,53,68,.5), rgba(8,10,16,.64));
+      linear-gradient(180deg, rgba(34,38,50,.9), rgba(6,8,12,.94));
+    backdrop-filter:blur(14px) saturate(1.2); -webkit-backdrop-filter:blur(14px) saturate(1.2);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 12px 32px rgba(0,0,0,.62);}
   .standings h2{font:600 .64rem/1 var(--orb); letter-spacing:.18em; text-transform:uppercase; color:#9aa6bc; margin:2px 4px 10px; display:flex; justify-content:space-between}
   .stHead{display:grid; grid-template-columns:26px 1fr 58px 50px 52px 40px; gap:8px; padding:0 10px 7px;
@@ -77,13 +78,12 @@
   @media(max-width:540px){ .stHead,.trow{grid-template-columns:22px 1fr 50px 44px 0 34px} .hideSm{display:none!important} }
 
   /* logo chip */
-  .lg{--bg:#55607a; width:30px;height:30px;border-radius:50%; flex:0 0 auto; position:relative; overflow:hidden;
-    background:radial-gradient(circle at 38% 30%, #fff, #e7ebf1 70%); box-shadow:0 1px 3px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.6);
-    display:flex; align-items:center; justify-content:center}
-  .lg img{width:100%;height:100%;object-fit:contain; display:block}
-  .lg b{display:none; font:800 .56rem/1 var(--font); color:#fff}
-  .lg.fb{background:var(--bg)} .lg.fb b{display:block} .lg.fb img{display:none}
-  .lg.big{width:40px;height:40px} .lg.big b{font-size:.66rem}
+  .lg{--bg:#55607a; width:40px;height:40px; flex:0 0 auto; position:relative; display:flex; align-items:center; justify-content:center}
+  .lg img{width:100%;height:100%;object-fit:contain; display:block; filter:drop-shadow(0 0 1.5px rgba(255,255,255,.55)) drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+  .lg b{display:none; font:800 .62rem/1 var(--font); color:#fff}
+  .lg.fb{background:var(--bg); border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.5)} .lg.fb b{display:block} .lg.fb img{display:none}
+  @media(max-width:720px){ .lg{width:32px;height:32px} .lg b{font-size:.56rem} }
+  @media(max-width:480px){ .lg{width:28px;height:28px} .lg b{font-size:.5rem} }
   .tabbr{font:800 1rem var(--orb); letter-spacing:.03em}
   .teamcell .meta small{display:block; font:600 .62rem var(--font); color:#8794ab; letter-spacing:.04em}
 
@@ -121,8 +121,8 @@
   .mid .at{font:700 .72rem var(--orb); color:#67738c}
   .mid .sc{font:700 .58rem var(--font); color:#9aa6bc; white-space:nowrap}
   .mid .lk{font:600 .54rem var(--font); letter-spacing:.1em; text-transform:uppercase; color:#6d7a93}
-  .mid .pk{font:700 .54rem var(--font); letter-spacing:.08em; text-transform:uppercase; color:var(--gold); opacity:0; transition:.15s}
-  .game.picked .mid .pk{opacity:1}
+  .mid .lk.mine{color:var(--gold)} .mid .lk.ok{color:#8ce292} .mid .lk.no{color:#f48c94}
+  .ties{font:600 .64rem/1.4 var(--font); color:#aab5c9; margin:8px 6px 0; letter-spacing:.02em}
   .divtag{font:700 .5rem var(--font); letter-spacing:.08em; color:#101820; background:var(--gold); border-radius:999px; padding:1px 5px}
 
   .legend{font:400 .72rem/1.55 var(--font); color:#8794ab; margin:18px 4px 0}
@@ -144,8 +144,7 @@
 
   <div class="ctrls">
     <span class="lab">Scenario</span>
-    <button class="btn" id="bCur">Reset to current</button>
-    <button class="btn" id="bClr">Clear picks</button>
+    <button class="btn" id="bClr">Clear my picks</button>
     <button class="btn" id="bRnd">Random rest</button>
   </div>
 
@@ -154,30 +153,27 @@
 </div>
 
 <script>
-/* ---------------- Teams ---------------- */
+/* ---------- Teams ---------- */
 const TEAMS={
-  PIT:{abbr:"PIT",espn:"pit",tc:"#FFB612",fb:"#101820",fbt:"#FFB612",city:"Pittsburgh"},
-  BAL:{abbr:"BAL",espn:"bal",tc:"#241773",fb:"#241773",fbt:"#ffffff",city:"Baltimore"},
-  CIN:{abbr:"CIN",espn:"cin",tc:"#FB4F14",fb:"#FB4F14",fbt:"#101820",city:"Cincinnati"},
-  CLE:{abbr:"CLE",espn:"cle",tc:"#FF3C00",fb:"#311D00",fbt:"#FF6A33",city:"Cleveland"}
+  PIT:{tc:"#FFB612",fb:"#101820",city:"Pittsburgh"},
+  BAL:{tc:"#241773",fb:"#241773",city:"Baltimore"},
+  CIN:{tc:"#FB4F14",fb:"#FB4F14",city:"Cincinnati"},
+  CLE:{tc:"#FF3C00",fb:"#311D00",city:"Cleveland"}
 };
 const ORDER=["PIT","BAL","CIN","CLE"];
 const OPP={ATL:"#A71930",NE:"#002244",IND:"#002C5F",TB:"#D50A0A",NO:"#D3BC8D",PHI:"#004C54",DEN:"#FB4F14",
   HOU:"#03202F",JAX:"#006778",CAR:"#0085CA",TEN:"#4B92DB",DAL:"#041E42",BUF:"#00338D",LAC:"#0080C6",
   WAS:"#5A1414",KC:"#E31837",MIA:"#008E97",NYJ:"#125740",LV:"#000000",NYG:"#0B2265"};
-const ESPNFIX={WAS:"wsh"};
-function espnAbbr(a){return (ESPNFIX[a]||a).toLowerCase();}
+const TO_ESPN={WAS:"wsh"},FROM_ESPN={WSH:"WAS"};
+const espnAbbr=a=>(TO_ESPN[a]||a).toLowerCase();
 
-/* ---------------- Division games [week, home, away] ---------------- */
+/* ---------- Schedule: division games [week, home, away] ---------- */
 const DIV=[
-  [3,"PIT","CIN"],[10,"CIN","PIT"],
-  [4,"CLE","PIT"],[8,"PIT","CLE"],
-  [15,"PIT","BAL"],[18,"BAL","PIT"],
-  [6,"CLE","BAL"],[16,"BAL","CLE"],
-  [7,"BAL","CIN"],[17,"CIN","BAL"],
-  [13,"CLE","CIN"],[18,"CIN","CLE"]
+  [3,"PIT","CIN"],[10,"CIN","PIT"],[4,"CLE","PIT"],[8,"PIT","CLE"],
+  [15,"PIT","BAL"],[18,"BAL","PIT"],[6,"CLE","BAL"],[16,"BAL","CLE"],
+  [7,"BAL","CIN"],[17,"CIN","BAL"],[13,"CLE","CIN"],[18,"CIN","CLE"]
 ];
-/* Non-division [week, team, oppAbbr, conf, homeForTeam] */
+/* Non-division [week, team, opponent, opponent conference, team is home] */
 const NOND=[
   [1,"PIT","ATL","NFC",true],[2,"PIT","NE","AFC",false],[5,"PIT","IND","AFC",true],[6,"PIT","TB","NFC",false],
   [7,"PIT","NO","NFC",false],[11,"PIT","PHI","NFC",false],[12,"PIT","DEN","AFC",true],[13,"PIT","HOU","AFC",true],
@@ -192,186 +188,164 @@ const NOND=[
   [7,"CLE","TEN","AFC",false],[9,"CLE","NO","NFC",false],[10,"CLE","HOU","AFC",true],[12,"CLE","LV","AFC",true],
   [14,"CLE","ATL","NFC",true],[15,"CLE","NYG","NFC",false],[17,"CLE","IND","AFC",true]
 ];
-
-/* ---------------- Build master game list (schedule order) ---------------- */
 const GAMES=[];
-DIV.forEach((g,i)=>GAMES.push({id:"d"+i, wk:g[0], div:true, home:g[1], away:g[2]}));
-NOND.forEach((g,i)=>{ const home=g[4]?g[1]:g[2], away=g[4]?g[2]:g[1];
-  GAMES.push({id:"n"+i, wk:g[0], div:false, home, away, team:g[1], opp:g[2], conf:g[3], ext:g[2]}); });
-const byId={}; GAMES.forEach(g=>byId[g.id]=g);
-function isTeam(x){return TEAMS[x]!==undefined;}
+DIV.forEach((g,i)=>GAMES.push({id:"d"+i,wk:g[0],div:true,home:g[1],away:g[2]}));
+NOND.forEach((g,i)=>{const home=g[4]?g[1]:g[2],away=g[4]?g[2]:g[1];
+  GAMES.push({id:"n"+i,wk:g[0],div:false,home,away,team:g[1],conf:g[3]});});
+const isTeam=x=>!!TEAMS[x];
+function gid(wk,a,b){const g=GAMES.find(g=>g.wk===wk&&((g.home===a&&g.away===b)||(g.home===b&&g.away===a)));return g?g.id:null;}
 
-/* ---------------- Locked (decided) results, as confirmed ---------------- */
-/* value = winner code (team abbr) or opponent abbr */
-const LOCK={};
-function lk(id,w,sc){ LOCK[id]={w,sc}; }
-// map helper: find game id by week + the two sides
-function gid(wk,a,b){ return GAMES.find(g=>g.wk===wk && ((g.home===a&&g.away===b)||(g.home===b&&g.away===a))).id; }
-lk(gid(1,"PIT","ATL"),"PIT","PIT 20-13 ATL");
-lk(gid(2,"PIT","NE"),"NE","NE 20-3 PIT");
-lk(gid(3,"PIT","CIN"),"PIT","PIT 30-27 CIN");
-lk(gid(1,"BAL","IND"),"BAL","BAL 41-23 IND");
-lk(gid(2,"BAL","NO"),"NO","NO 24-17 BAL");
-lk(gid(1,"CIN","TB"),"CIN","CIN 33-27 TB");
-lk(gid(2,"CIN","HOU"),"CIN","CIN 20-6 HOU");
-lk(gid(3,"BAL","DAL"),"BAL","BAL 34-31 DAL");
-lk(gid(1,"CLE","JAX"),"JAX","JAX 34-10 CLE");
-lk(gid(2,"CLE","TB"),"CLE","CLE 23-19 TB");
-lk(gid(3,"CLE","CAR"),"CLE","CLE 21-18 CAR");
-const CUR_WK=4;
+/* ---------- Finals on file (confirmed through Week 3); ESPN refresh adds newer ones ---------- */
+const FINAL={};
+function fin(wk,a,b,w,sc){const id=gid(wk,a,b);if(id)FINAL[id]={w,sc};}
+fin(1,"PIT","ATL","PIT","PIT 20-13 ATL");fin(2,"PIT","NE","NE","NE 20-3 PIT");fin(3,"PIT","CIN","PIT","PIT 30-27 CIN");
+fin(1,"BAL","IND","BAL","BAL 41-23 IND");fin(2,"BAL","NO","NO","NO 24-17 BAL");fin(3,"BAL","DAL","BAL","BAL 34-31 DAL");
+fin(1,"CIN","TB","CIN","CIN 33-27 TB");fin(2,"CIN","HOU","CIN","CIN 20-6 HOU");
+fin(1,"CLE","JAX","JAX","JAX 34-10 CLE");fin(2,"CLE","TB","CLE","CLE 23-19 TB");fin(3,"CLE","CAR","CLE","CLE 21-18 CAR");
 
-/* ---------------- State ---------------- */
-let results={}; // id -> winner side (team abbr or opp abbr)
-function setCurrent(){ results={}; for(const id in LOCK) results[id]=LOCK[id].w; render(true); }
-function clearAll(){ results={}; render(true); }
-function randomRest(){ for(const g of GAMES){ if(LOCK[g.id]){results[g.id]=LOCK[g.id].w; continue;}
-    results[g.id]=Math.random()<0.5?g.home:g.away; } render(true); }
+/* ---------- Current NFL week (week w ends Monday Sep 14 2026 + 7(w-1)) ---------- */
+function currentWeek(){const now=new Date();for(let w=1;w<=18;w++){if(now<=new Date(2026,8,14+7*(w-1),23,59,59))return w;}return 18;}
+const CUR_WK=currentWeek();
 
-/* ---------------- Engine ---------------- */
+/* ---------- Your picks persist on this device ---------- */
+const KEY="afcnPicks";
+let picks={};
+try{const p=JSON.parse(localStorage.getItem(KEY)||"{}")||{};
+  for(const id in p){const g=GAMES.find(x=>x.id===id);if(g&&(p[id]===g.home||p[id]===g.away))picks[id]=p[id];}}catch(e){}
+function savePicks(){try{localStorage.setItem(KEY,JSON.stringify(picks));}catch(e){}}
+let results={};
+function merge(){results=Object.assign({},picks);for(const id in FINAL)results[id]=FINAL[id].w;}
+function clearPicks(){picks={};savePicks();render(true);}
+function randomRest(){GAMES.forEach(g=>{if(!FINAL[g.id])picks[g.id]=Math.random()<0.5?g.home:g.away;});savePicks();render(true);}
+function pick(id,side){if(FINAL[id])return;if(picks[id]===side)delete picks[id];else picks[id]=side;savePicks();render(true);}
+
+/* ---------- Standings engine ---------- */
 function compute(){
-  const t={}; ORDER.forEach(c=>t[c]={code:c,w:0,l:0,dw:0,dl:0,cw:0,cl:0,h2h:{}});
-  ORDER.forEach(a=>ORDER.forEach(b=>{if(a!==b)t[a].h2h[b]={w:0,l:0}}));
-  GAMES.forEach(g=>{ const win=results[g.id]; if(!win) return;
-    if(g.div){ const lose=(g.home===win?g.away:g.home);
-      t[win].w++; t[win].dw++; t[win].cw++; t[win].h2h[lose].w++;
-      t[lose].l++; t[lose].dl++; t[lose].cl++; t[lose].h2h[win].l++;
-    } else { const tm=t[g.team], won=(win===g.team);
-      if(won){ tm.w++; if(g.conf==="AFC") tm.cw++; } else { tm.l++; if(g.conf==="AFC") tm.cl++; } }
-  });
-  ORDER.forEach(c=>{const x=t[c]; x.gp=x.w+x.l; x.pct=x.gp?x.w/x.gp:0;
-    x.dpct=(x.dw+x.dl)?x.dw/(x.dw+x.dl):0; x.cpct=(x.cw+x.cl)?x.cw/(x.cw+x.cl):0;});
+  const t={};ORDER.forEach(c=>t[c]={code:c,w:0,l:0,dw:0,dl:0,cw:0,cl:0,h2h:{}});
+  ORDER.forEach(a=>ORDER.forEach(b=>{if(a!==b)t[a].h2h[b]={w:0,l:0};}));
+  GAMES.forEach(g=>{const win=results[g.id];if(!win)return;
+    if(g.div){const lose=g.home===win?g.away:g.home;
+      t[win].w++;t[win].dw++;t[win].cw++;t[win].h2h[lose].w++;
+      t[lose].l++;t[lose].dl++;t[lose].cl++;t[lose].h2h[win].l++;}
+    else{const tm=t[g.team];if(win===g.team){tm.w++;if(g.conf==="AFC")tm.cw++;}else{tm.l++;if(g.conf==="AFC")tm.cl++;}}});
+  /* no games yet in a category is neutral (.500), never treated like a losing record */
+  const pct=(w,l)=>(w+l)?w/(w+l):0.5;
+  ORDER.forEach(c=>{const x=t[c];x.pct=(x.w+x.l)?x.w/(x.w+x.l):0;x.dpct=pct(x.dw,x.dl);x.cpct=pct(x.cw,x.cl);});
   const arr=ORDER.map(c=>t[c]);
   arr.sort((a,b)=>{
-    if(b.pct!==a.pct) return b.pct-a.pct;
-    const h=a.h2h[b.code], n=h.w+h.l; if(n){ const d=h.w-h.l; if(d) return d>0?-1:1; }
-    if(b.dpct!==a.dpct) return b.dpct-a.dpct;
-    if(b.cpct!==a.cpct) return b.cpct-a.cpct;
-    return ORDER.indexOf(a.code)-ORDER.indexOf(b.code);
-  });
-  const lw=arr[0].w, ll=arr[0].l;
-  arr.forEach((x,i)=>{ x.rank=i+1; x.gb=((lw-x.w)+(x.l-ll))/2; x.tiedPrev=i>0&&arr[i-1].pct===x.pct; });
-  arr.allDone=GAMES.every(g=>results[g.id]);
-  arr.decidedBy=(a,b)=>{ const h=a.h2h[b.code]; if((h.w+h.l)&&h.w!==h.l) return "head-to-head";
-    if(a.dpct!==b.dpct) return "division record"; if(a.cpct!==b.cpct) return "conference record"; return "coin flip"; };
+    if(b.pct!==a.pct)return b.pct-a.pct;
+    const h=a.h2h[b.code];if(h.w!==h.l)return h.w>h.l?-1:1;
+    if(b.dpct!==a.dpct)return b.dpct-a.dpct;
+    if(b.cpct!==a.cpct)return b.cpct-a.cpct;
+    return ORDER.indexOf(a.code)-ORDER.indexOf(b.code);});
+  const lw=arr[0].w,ll=arr[0].l;
+  arr.forEach((x,i)=>{x.gb=((lw-x.w)+(x.l-ll))/2;x.tiedPrev=i>0&&arr[i-1].pct===x.pct;});
   return arr;
 }
+function decidedBy(a,b){const h=a.h2h[b.code];if(h.w!==h.l)return "head-to-head";
+  if(a.dpct!==b.dpct)return "division record";if(a.cpct!==b.cpct)return "conference record";return "coin flip";}
 
-/* ---------------- Logo + helpers ---------------- */
-function logo(side, big){
-  const T=TEAMS[side];
-  const bg = T?T.fb:(OPP[side]||"#55607a");
-  const abbr = T?T.abbr:side;
-  const src = `https://a.espncdn.com/i/teamlogos/nfl/500/${espnAbbr(side)}.png`;
-  return `<span class="lg ${big?'big':''}" style="--bg:${bg}"><img src="${src}" alt="${abbr}" onerror="this.closest('.lg').classList.add('fb')"><b>${abbr}</b></span>`;
-}
-function recText(c){ const s=stat[c]; return s? `${s.w}-${s.l}`:""; }
+/* ---------- Logos: same ESPN source the hub uses; colored crest if one can't load ---------- */
+function logo(side){const T=TEAMS[side],bg=T?T.fb:(OPP[side]||"#55607a");
+  return `<span class="lg" style="--bg:${bg}"><img src="https://a.espncdn.com/i/teamlogos/nfl/500/${espnAbbr(side)}.png" alt="${side}" onerror="this.parentNode.classList.add('fb')"><b>${side}</b></span>`;}
 
-/* ---------------- Standings render with FLIP ---------------- */
+/* ---------- Standings: rows slide when the order changes ---------- */
 const rowsBox=document.getElementById("rows");
-let rowEls={}; let stat={};
-function buildRows(){ rowsBox.innerHTML=""; rowEls={};
-  ORDER.forEach(c=>{ const T=TEAMS[c]; const d=document.createElement("div");
-    d.className="trow"; d.style.setProperty("--tc",T.tc);
-    d.innerHTML=`<div class="rk"></div>
-      <div class="teamcell">${logo(c,true)}<div class="meta"><span class="tabbr">${T.abbr}</span><small>${T.city}</small></div></div>
-      <div class="rec"></div><div class="pct"></div><div class="sub hideSm"></div><div class="gb"></div>`;
-    rowEls[c]=d; rowsBox.appendChild(d);
-  });
+const rowEls={};let stat={};
+function buildRows(){
+  ORDER.forEach(c=>{const T=TEAMS[c],d=document.createElement("div");
+    d.className="trow";d.style.setProperty("--tc",T.tc);
+    d.innerHTML=`<div class="rk"></div><div class="teamcell">${logo(c)}<div class="meta"><span class="tabbr">${c}</span><small>${T.city}</small></div></div><div class="rec"></div><div class="pct"></div><div class="sub hideSm"></div><div class="gb"></div>`;
+    rowEls[c]=d;rowsBox.appendChild(d);});
+  const tl=document.createElement("div");tl.id="ties";tl.className="ties";rowsBox.after(tl);
 }
 function renderStandings(flip){
-  const arr=compute(); const map={}; arr.forEach(x=>map[x.code]=x);
-  stat=map;
-  // FLIP: record old positions
-  const first={}; if(flip) ORDER.forEach(c=>first[c]=rowEls[c].getBoundingClientRect().top);
-  // update content
-  arr.forEach((x,i)=>{ const el=rowEls[x.code];
-    el.classList.toggle("lead", i===0);
+  const arr=compute();stat={};arr.forEach(x=>stat[x.code]=x);
+  const first={};if(flip)ORDER.forEach(c=>first[c]=rowEls[c].getBoundingClientRect().top);
+  arr.forEach((x,i)=>{const el=rowEls[x.code];el.classList.toggle("lead",i===0);
     el.querySelector(".rk").textContent=i+1;
     el.querySelector(".rec").textContent=`${x.w}-${x.l}`;
-    el.querySelector(".pct").textContent=(x.pct).toFixed(3).replace(/^0/,"");
+    el.querySelector(".pct").textContent=x.pct.toFixed(3).replace(/^0/,"");
     el.querySelector(".sub").textContent=`${x.dw}-${x.dl}`;
-    el.querySelector(".gb").textContent= x.gb<=0?"—":x.gb.toFixed(x.gb%1?1:0);
-  });
-  // reorder DOM
-  arr.forEach(x=>rowsBox.appendChild(rowEls[x.code]));
-  // FLIP: animate
-  if(flip){ ORDER.forEach(c=>{ const el=rowEls[c]; const last=el.getBoundingClientRect().top;
-      const dy=first[c]-last; if(dy){ el.style.transition="none"; el.style.transform=`translateY(${dy}px)`;
-        requestAnimationFrame(()=>{ el.style.transition="transform .42s cubic-bezier(.2,.8,.2,1)"; el.style.transform=""; });
-        el.classList.remove("moved"); void el.offsetWidth; el.classList.add("moved"); } }); }
-  // legend tie note
-  let tie="";
-  for(let i=1;i<arr.length;i++){ if(arr[i].tiedPrev){ tie=`Tie at ${arr[i-1].w}-${arr[i-1].l} broken by <b>${arr.decidedBy(arr[i-1],arr[i])}</b>.`; break; } }
-  const done=GAMES.filter(g=>results[g.id]).length;
-  document.getElementById("setcount").textContent=`${done}/${GAMES.length} games set`;
-  document.getElementById("legend").innerHTML=
-    `<b>DIV</b> record vs AFC North · <b>GB</b> games behind leader · tiebreakers: <b>head-to-head › division › conference</b>. ${tie?'<br>'+tie:''}`+
-    `<br>Decided games are locked with their real scores (through the current week on file; Browns' later early games weren't confirmed by the source, so they're left open). ★ = division game. The “LEAD” team is the current AFC North front-runner.`;
+    el.querySelector(".gb").textContent=x.gb<=0?"—":x.gb.toFixed(x.gb%1?1:0);
+    rowsBox.appendChild(el);});
+  if(flip)ORDER.forEach(c=>{const el=rowEls[c],dy=first[c]-el.getBoundingClientRect().top;if(!dy)return;
+    el.style.transition="none";el.style.transform=`translateY(${dy}px)`;
+    requestAnimationFrame(()=>{el.style.transition="transform .42s cubic-bezier(.2,.8,.2,1)";el.style.transform="";});
+    el.classList.remove("moved");void el.offsetWidth;el.classList.add("moved");});
+  const ties=[];for(let i=1;i<arr.length;i++)if(arr[i].tiedPrev)ties.push(`${arr[i-1].code} over ${arr[i].code}: ${decidedBy(arr[i-1],arr[i])}`);
+  document.getElementById("ties").textContent=ties.length?"Tiebreaks · "+ties.join(" · "):"";
+  const nf=Object.keys(FINAL).length,np=Object.keys(picks).filter(id=>!FINAL[id]).length;
+  document.getElementById("setcount").textContent=`${nf} final · ${np} picked`;
 }
 
-/* ---------------- Schedule render ---------------- */
-const schedBox=document.getElementById("sched");
-const btnRef={}; // id -> {away:el, home:el, game:el}
+/* ---------- Schedule: one card per game, visitor left, home right ---------- */
+const schedBox=document.getElementById("sched");const ref={};
 function buildSched(){
-  schedBox.innerHTML="";
-  const weeks=[...new Set(GAMES.map(g=>g.wk))].sort((a,b)=>a-b);
-  weeks.forEach(wk=>{
-    const wkGames=GAMES.filter(g=>g.wk===wk).sort((a,b)=> (a.div?0:1)-(b.div?0:1));
-    const wd=document.createElement("div"); wd.className="wk"+(wk===CUR_WK?" cur":"");
+  [...new Set(GAMES.map(g=>g.wk))].sort((a,b)=>a-b).forEach(wk=>{
+    const wd=document.createElement("div");wd.className="wk"+(wk===CUR_WK?" cur":"");wd.id="wk-"+wk;
     wd.innerHTML=`<div class="wkh"><b>Week ${wk}${wk===CUR_WK?" · now":""}</b><span class="ln"></span></div>`;
-    wkGames.forEach(g=>{
-      const locked=!!LOCK[g.id];
-      const gm=document.createElement("div"); gm.className="game glass";
-      const awayT=isTeam(g.away), homeT=isTeam(g.home);
-      const aTc=awayT?TEAMS[g.away].tc:(OPP[g.away]||"#55607a");
-      const hTc=homeT?TEAMS[g.home].tc:(OPP[g.home]||"#55607a");
-      gm.innerHTML=`
-        <div class="side away" data-side="away" style="--tc:${aTc}">${logo(g.away)}<div><div class="nm">${g.away}</div><div class="rec" data-rec="${g.away}"></div></div></div>
-        <div class="mid">
-          <div class="at">@</div>
-          ${locked?`<div class="sc">${LOCK[g.id].sc}</div><div class="lk">final</div>`:`<div class="lk" style="opacity:.0">·</div><div class="pk">your pick</div>`}
-          ${g.div?'<div class="divtag">DIV ★</div>':''}
-        </div>
-        <div class="side home" data-side="home" style="--tc:${hTc}">${logo(g.home)}<div><div class="nm">${g.home}</div><div class="rec" data-rec="${g.home}"></div></div></div>`;
-      const aEl=gm.querySelector('.side.away'), hEl=gm.querySelector('.side.home');
-      if(locked){ aEl.classList.add("locked"); hEl.classList.add("locked"); }
-      else{
-        aEl.addEventListener("click",()=>pick(g.id,g.away));
-        hEl.addEventListener("click",()=>pick(g.id,g.home));
-      }
-      btnRef[g.id]={away:aEl,home:hEl,game:gm};
-      wd.appendChild(gm);
-    });
-    schedBox.appendChild(wd);
-  });
+    GAMES.filter(g=>g.wk===wk).sort((a,b)=>(a.div?0:1)-(b.div?0:1)).forEach(g=>{
+      const tc=s=>isTeam(s)?TEAMS[s].tc:(OPP[s]||"#55607a");
+      const gm=document.createElement("div");gm.className="game glass";
+      gm.innerHTML=`<div class="side away" style="--tc:${tc(g.away)}">${logo(g.away)}<div><div class="nm">${g.away}</div><div class="rec" data-rec="${g.away}"></div></div></div>
+        <div class="mid"><div class="at">@</div><div class="sc"></div><div class="lk"></div>${g.div?'<div class="divtag">DIV ★</div>':''}</div>
+        <div class="side home" style="--tc:${tc(g.home)}">${logo(g.home)}<div><div class="nm">${g.home}</div><div class="rec" data-rec="${g.home}"></div></div></div>`;
+      const a=gm.querySelector(".side.away"),h=gm.querySelector(".side.home");
+      a.addEventListener("click",()=>pick(g.id,g.away));h.addEventListener("click",()=>pick(g.id,g.home));
+      ref[g.id]={a,h,gm,sc:gm.querySelector(".sc"),lk:gm.querySelector(".lk")};wd.appendChild(gm);});
+    schedBox.appendChild(wd);});
 }
 function refreshSched(){
-  GAMES.forEach(g=>{ const r=btnRef[g.id], win=results[g.id];
-    const aWin=win===g.away, hWin=win===g.home;
-    r.away.classList.toggle("win",aWin); r.away.classList.toggle("lose",!!win&&!aWin);
-    r.home.classList.toggle("win",hWin); r.home.classList.toggle("lose",!!win&&!hWin);
-    r.game.classList.toggle("picked",!!win&&!LOCK[g.id]);
-  });
-  // team records on each side chip
-  document.querySelectorAll('[data-rec]').forEach(el=>{ const c=el.getAttribute('data-rec');
-    el.textContent= stat[c]? `${stat[c].w}-${stat[c].l}`:""; });
+  GAMES.forEach(g=>{const r=ref[g.id],win=results[g.id],f=FINAL[g.id],p=picks[g.id];
+    r.a.classList.toggle("win",win===g.away);r.a.classList.toggle("lose",!!win&&win!==g.away);
+    r.h.classList.toggle("win",win===g.home);r.h.classList.toggle("lose",!!win&&win!==g.home);
+    r.a.classList.toggle("locked",!!f);r.h.classList.toggle("locked",!!f);
+    r.gm.classList.toggle("picked",!!p&&!f);
+    r.sc.textContent=f?f.sc:"";r.lk.className="lk";
+    if(f){r.lk.textContent=p?(p===f.w?"final · you ✓":"final · you ✗"):"final";if(p)r.lk.classList.add(p===f.w?"ok":"no");}
+    else if(p){r.lk.textContent="your pick";r.lk.classList.add("mine");}
+    else r.lk.textContent="";});
+  document.querySelectorAll("[data-rec]").forEach(el=>{const s=stat[el.dataset.rec];el.textContent=s?`${s.w}-${s.l}`:"";});
 }
 
-/* ---------------- Pick ---------------- */
-function pick(id,side){ if(LOCK[id]) return;
-  results[id] = results[id]===side? undefined : side; if(results[id]===undefined) delete results[id];
-  render(true);
+/* ---------- Live finals from ESPN's public scoreboard (same source as the hub's recap links) ---------- */
+let liveNote="Showing results on file through Week 3.";
+async function refreshFinals(){
+  let ok=0,changed=false;const weeks=[];for(let w=1;w<=CUR_WK;w++)weeks.push(w);
+  await Promise.all(weeks.map(async w=>{
+    try{
+      const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=2026&seasontype=2&week=${w}`,{cache:"no-store"});
+      if(!r.ok)return;const d=await r.json();ok++;
+      (d.events||[]).forEach(ev=>{
+        const c=ev.competitions&&ev.competitions[0],st=c&&c.status&&c.status.type;if(!st||!st.completed)return;
+        const wk=(ev.week&&ev.week.number)||(d.week&&d.week.number)||w;
+        const cs=c.competitors||[],H=cs.find(x=>x.homeAway==="home"),A=cs.find(x=>x.homeAway==="away");if(!H||!A)return;
+        const ab=x=>{const v=((x.team&&x.team.abbreviation)||"").toUpperCase();return FROM_ESPN[v]||v;};
+        const h=ab(H),a=ab(A),id=gid(wk,h,a);if(!id)return;
+        const hs=parseInt(H.score,10),as=parseInt(A.score,10);if(isNaN(hs)||isNaN(as)||hs===as)return;
+        const f=hs>as?{w:h,sc:`${h} ${hs}-${as} ${a}`}:{w:a,sc:`${a} ${as}-${hs} ${h}`};
+        const o=FINAL[id];if(!o||o.w!==f.w||o.sc!==f.sc){FINAL[id]=f;changed=true;}});
+    }catch(e){}}));
+  liveNote=ok?"Final scores update automatically from ESPN.":"Live score update unavailable right now; showing results on file.";
+  if(changed)render(true);else updateLegend();
 }
+function updateLegend(){document.getElementById("legend").innerHTML=
+  `Tap a team's logo to pick the winner; tap it again to clear. Your picks save on this device. Finished games lock with the real score and show whether your pick was right. `+
+  `<b>DIV</b> = record vs AFC North, <b>GB</b> = games behind. Tiebreakers in order: <b>head-to-head › division › conference</b>. ★ = division game.<br>${liveNote}`;}
 
-/* ---------------- Render ---------------- */
+/* ---------- Boot ---------- */
 let built=false;
-function render(flip){ if(!built){ buildRows(); buildSched(); built=true; flip=false; }
-  renderStandings(flip); refreshSched(); }
-
-document.getElementById("bCur").onclick=setCurrent;
-document.getElementById("bClr").onclick=clearAll;
+function render(flip){if(!built){buildRows();buildSched();built=true;flip=false;}
+  merge();renderStandings(flip);refreshSched();updateLegend();}
+document.getElementById("bClr").onclick=clearPicks;
 document.getElementById("bRnd").onclick=randomRest;
-setCurrent();
+render(false);
+function jumpToWeek(){if(window.innerHeight<80)return false;
+  const el=document.getElementById("wk-"+CUR_WK),st=document.querySelector(".standings");
+  if(el&&CUR_WK>1)window.scrollTo(0,el.getBoundingClientRect().top+window.scrollY-(st?st.offsetHeight:0)-24);return true;}
+if(!jumpToWeek())window.addEventListener("resize",function h(){if(jumpToWeek())window.removeEventListener("resize",h);});
+refreshFinals();
 </script>
 </body>
 </html>
