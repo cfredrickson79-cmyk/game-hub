@@ -306,7 +306,7 @@ function refreshSched(){
     if(f){r.lk.textContent=p?(p===f.w?"final · you ✓":"final · you ✗"):"final";if(p)r.lk.classList.add(p===f.w?"ok":"no");}
     else if(p){r.lk.textContent="your pick";r.lk.classList.add("mine");}
     else r.lk.textContent="";});
-  document.querySelectorAll("[data-rec]").forEach(el=>{const s=stat[el.dataset.rec];el.textContent=s?`${s.w}-${s.l}`:"";});
+  document.querySelectorAll("[data-rec]").forEach(el=>{const c=el.dataset.rec,s=stat[c];el.textContent=s?`${s.w}-${s.l}`:(OPP_REC[c]||"");});
 }
 
 /* ---------- Live finals from ESPN's public scoreboard (same source as the hub's recap links) ---------- */
@@ -334,6 +334,20 @@ function updateLegend(){document.getElementById("legend").innerHTML=
   `Tap a team's logo to pick the winner; tap it again to clear. Your picks save on this device. Finished games lock with the real score and show whether your pick was right. `+
   `<b>DIV</b> = record vs AFC North, <b>GB</b> = games behind. Tiebreakers in order: <b>head-to-head › division › conference</b>. ★ = division game.<br>${liveNote}`;}
 
+/* ---------- Opponents' real records: a loose guide, not affected by your picks ---------- */
+const OPP_REC={ATL:"1-2",NE:"1-2",IND:"1-2",TB:"0-3",NO:"1-2",PHI:"2-1",DEN:"2-1",HOU:"0-3",JAX:"2-1",CAR:"1-2",
+  TEN:"0-3",DAL:"1-2",BUF:"3-0",LAC:"0-3",WAS:"1-2",KC:"3-0",MIA:"0-3",NYJ:"1-2",LV:"3-0",NYG:"2-1"}; /* through Week 3 */
+async function refreshOppRecords(){
+  try{const r=await fetch("https://site.api.espn.com/apis/v2/sports/football/nfl/standings",{cache:"no-store"});if(!r.ok)return;
+    const d=await r.json(),seen=new Set();
+    const walk=o=>{if(!o||typeof o!=="object"||seen.has(o))return;seen.add(o);
+      if(Array.isArray(o.entries))o.entries.forEach(e=>{const ab=((e.team&&e.team.abbreviation)||"").toUpperCase(),k=FROM_ESPN[ab]||ab,st={};
+        (e.stats||[]).forEach(x=>{st[x.name]=x.value;});
+        if(OPP[k]&&st.wins!=null&&st.losses!=null)OPP_REC[k]=st.wins+"-"+st.losses+(st.ties?"-"+st.ties:"");});
+      Object.values(o).forEach(walk);};
+    walk(d);refreshSched();}catch(e){}
+}
+
 /* ---------- Boot ---------- */
 let built=false;
 function render(flip){if(!built){buildRows();buildSched();built=true;flip=false;}
@@ -346,6 +360,7 @@ function jumpToWeek(){if(window.innerHeight<80)return false;
   if(el&&CUR_WK>1)window.scrollTo(0,el.getBoundingClientRect().top+window.scrollY-(st?st.offsetHeight:0)-24);return true;}
 if(!jumpToWeek())window.addEventListener("resize",function h(){if(jumpToWeek())window.removeEventListener("resize",h);});
 refreshFinals();
+refreshOppRecords();
 </script>
 </body>
 </html>
