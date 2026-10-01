@@ -127,6 +127,8 @@
 
   .legend{font:400 .72rem/1.55 var(--font); color:#8794ab; margin:18px 4px 0}
   .legend b{color:#c3cbd8}
+  .game .when{grid-column:1/-1; text-align:center; font:700 .58rem/1 var(--orb); letter-spacing:.16em; text-transform:uppercase; color:#9aa6bc; margin:-1px 0 3px}
+  .wk.cur .game .when{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -289,12 +291,12 @@ function buildSched(){
     GAMES.filter(g=>g.wk===wk).sort((a,b)=>(a.div?0:1)-(b.div?0:1)).forEach(g=>{
       const tc=s=>isTeam(s)?TEAMS[s].tc:(OPP[s]||"#55607a");
       const gm=document.createElement("div");gm.className="game glass";
-      gm.innerHTML=`<div class="side away" style="--tc:${tc(g.away)}">${logo(g.away)}<div><div class="nm">${g.away}</div><div class="rec" data-rec="${g.away}"></div></div></div>
+      gm.innerHTML=`<div class="when"></div><div class="side away" style="--tc:${tc(g.away)}">${logo(g.away)}<div><div class="nm">${g.away}</div><div class="rec" data-rec="${g.away}"></div></div></div>
         <div class="mid"><div class="at">@</div><div class="sc"></div><div class="lk"></div>${g.div?'<div class="divtag">DIV ★</div>':''}</div>
         <div class="side home" style="--tc:${tc(g.home)}">${logo(g.home)}<div><div class="nm">${g.home}</div><div class="rec" data-rec="${g.home}"></div></div></div>`;
       const a=gm.querySelector(".side.away"),h=gm.querySelector(".side.home");
       a.addEventListener("click",()=>pick(g.id,g.away));h.addEventListener("click",()=>pick(g.id,g.home));
-      ref[g.id]={a,h,gm,sc:gm.querySelector(".sc"),lk:gm.querySelector(".lk")};wd.appendChild(gm);});
+      ref[g.id]={a,h,gm,sc:gm.querySelector(".sc"),lk:gm.querySelector(".lk"),when:gm.querySelector(".when")};wd.appendChild(gm);});
     schedBox.appendChild(wd);});
 }
 function refreshSched(){
@@ -303,7 +305,7 @@ function refreshSched(){
     r.h.classList.toggle("win",win===g.home);r.h.classList.toggle("lose",!!win&&win!==g.home);
     r.a.classList.toggle("locked",!!f);r.h.classList.toggle("locked",!!f);
     r.gm.classList.toggle("picked",!!p&&!f);
-    r.sc.textContent=f?f.sc:"";r.lk.className="lk";
+    r.when.textContent=whenText(g);r.sc.textContent=f?f.sc:"";r.lk.className="lk";
     if(f){r.lk.textContent=p?(p===f.w?"final · you ✓":"final · you ✗"):"final";if(p)r.lk.classList.add(p===f.w?"ok":"no");}
     else if(p){r.lk.textContent="your pick";r.lk.classList.add("mine");}
     else r.lk.textContent="";});
@@ -363,6 +365,47 @@ function sndLabel(){bSnd.textContent="Sound: "+(SOUND?"on":"off");}
 bSnd.onclick=()=>{SOUND=!SOUND;try{localStorage.setItem("afcnSound",SOUND?"on":"off");}catch(e){}sndLabel();pop(true);};
 sndLabel();
 
+/* ---------- Game dates/times (Mountain). Baked from team schedules; ESPN refresh keeps flex changes current ---------- */
+const wkey=(wk,a,b)=>wk+"|"+[a,b].sort().join("|");
+const WHEN={};
+[[1,"PIT","ATL","09-13","11:00a"],[2,"PIT","NE","09-20","11:00a"],[3,"PIT","CIN","09-27","11:00a"],[4,"PIT","CLE","10-01","6:15p"],
+ [5,"PIT","IND","10-11","11:00a"],[6,"PIT","TB","10-18","11:00a"],[7,"PIT","NO","10-25","7:30a"],[8,"PIT","CLE","11-01","11:00a"],
+ [10,"PIT","CIN","11-15","6:20p"],[11,"PIT","PHI","11-22","2:25p"],[12,"PIT","DEN","11-27","1:00p"],[13,"PIT","HOU","12-06","6:20p"],
+ [14,"PIT","JAX","12-14","6:15p"],[15,"PIT","BAL","12-20","11:00a"],[16,"PIT","CAR","12-27","TBD"],[17,"PIT","TEN","01-03","11:00a"],[18,"PIT","BAL","","TBD"],
+ [1,"BAL","IND","09-13",""],[2,"BAL","NO","09-20",""],[3,"BAL","DAL","09-27",""],[4,"BAL","TEN","10-04","11:00a"],[5,"BAL","ATL","10-11","6:20p"],
+ [6,"BAL","CLE","10-18","11:00a"],[7,"BAL","CIN","10-25","11:00a"],[8,"BAL","BUF","11-01","11:00a"],[9,"BAL","JAX","11-05","6:15p"],
+ [10,"BAL","LAC","11-16","6:15p"],[11,"BAL","CAR","11-22","11:00a"],[12,"BAL","HOU","11-29","11:00a"],[14,"BAL","TB","12-13","11:00a"],
+ [16,"BAL","CLE","12-27","11:00a"],[17,"BAL","CIN","12-31","6:15p"],
+ [1,"CIN","TB","09-13",""],[2,"CIN","HOU","09-20",""],[4,"CIN","JAX","10-04","11:00a"],[5,"CIN","MIA","10-11","11:00a"],[8,"CIN","TEN","11-01","11:00a"],
+ [9,"CIN","ATL","11-08","7:30a"],[11,"CIN","WAS","11-23","6:15p"],[12,"CIN","NO","11-29","11:00a"],[13,"CIN","CLE","12-06","11:00a"],
+ [14,"CIN","KC","12-13","2:25p"],[15,"CIN","CAR","12-20","11:00a"],[16,"CIN","IND","12-27","TBD"],[18,"CIN","CLE","","TBD"],
+ [1,"CLE","JAX","09-13",""],[2,"CLE","TB","09-20",""],[3,"CLE","CAR","09-27",""],[5,"CLE","NYJ","10-11","11:00a"],[7,"CLE","TEN","10-25","11:00a"],
+ [9,"CLE","NO","11-08","11:00a"],[10,"CLE","HOU","11-15","11:00a"],[12,"CLE","LV","11-29","11:00a"],[14,"CLE","ATL","12-13","11:00a"],
+ [15,"CLE","NYG","12-20","11:00a"],[17,"CLE","IND","01-03","11:00a"]
+].forEach(r=>{const md=r[3]?r[3].split("-"):null;WHEN[wkey(r[0],r[1],r[2])]={m:md?+md[0]:0,d:md?+md[1]:0,t:r[4]};});
+const WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function whenText(g){const w=WHEN[wkey(g.wk,g.home,g.away)];if(!w)return "";
+  if(!w.m)return "Date TBD";
+  const dt=new Date(w.m<6?2027:2026,w.m-1,w.d),ds=`${WD[dt.getDay()]} ${MN[w.m-1]} ${w.d}`;
+  if(FINAL[g.id]||!w.t)return ds;
+  return ds+" · "+(w.t==="TBD"?"Time TBD":w.t.replace(/a$/," AM").replace(/p$/," PM"));}
+async function refreshWhen(){let changed=false;
+  const fmt=new Intl.DateTimeFormat("en-US",{timeZone:"America/Denver",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:true});
+  await Promise.all(ORDER.map(async t=>{try{
+    const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/${t.toLowerCase()}/schedule?season=2026&seasontype=2`,{cache:"no-store"});
+    if(!r.ok)return;const d=await r.json();
+    (d.events||[]).forEach(ev=>{const c=ev.competitions&&ev.competitions[0],wk=ev.week&&ev.week.number;if(!c||!wk||!ev.date)return;
+      const cs=c.competitors||[];if(cs.length<2)return;
+      const ab=x=>{const v=((x.team&&x.team.abbreviation)||"").toUpperCase();return FROM_ESPN[v]||v;};
+      const k=wkey(wk,ab(cs[0]),ab(cs[1]));if(!WHEN[k])return;
+      const p={};fmt.formatToParts(new Date(ev.date)).forEach(x=>{p[x.type]=x.value;});
+      const tbd=(c.timeValid===false)||(ev.timeValid===false);
+      const nv={m:+p.month,d:+p.day,t:tbd?"TBD":`${p.hour}:${p.minute}${p.dayPeriod==="AM"?"a":"p"}`};
+      const o=WHEN[k];if(o.m!==nv.m||o.d!==nv.d||o.t!==nv.t){WHEN[k]=nv;changed=true;}});
+  }catch(e){}}));
+  if(changed)refreshSched();
+}
+
 /* ---------- Boot ---------- */
 let built=false;
 function render(flip){if(!built){buildRows();buildSched();built=true;flip=false;}
@@ -376,6 +419,7 @@ function jumpToWeek(){if(window.innerHeight<80)return false;
 if(!jumpToWeek())window.addEventListener("resize",function h(){if(jumpToWeek())window.removeEventListener("resize",h);});
 refreshFinals();
 refreshOppRecords();
+refreshWhen();
 </script>
 </body>
 </html>
