@@ -146,6 +146,7 @@
     <span class="lab">Scenario</span>
     <button class="btn" id="bClr">Clear my picks</button>
     <button class="btn" id="bRnd">Random rest</button>
+    <button class="btn" id="bSnd">Sound: on</button>
   </div>
 
   <div id="sched"></div>
@@ -216,8 +217,8 @@ function savePicks(){try{localStorage.setItem(KEY,JSON.stringify(picks));}catch(
 let results={};
 function merge(){results=Object.assign({},picks);for(const id in FINAL)results[id]=FINAL[id].w;}
 function clearPicks(){picks={};savePicks();render(true);}
-function randomRest(){GAMES.forEach(g=>{if(!FINAL[g.id])picks[g.id]=Math.random()<0.5?g.home:g.away;});savePicks();render(true);}
-function pick(id,side){if(FINAL[id])return;if(picks[id]===side)delete picks[id];else picks[id]=side;savePicks();render(true);}
+function randomRest(){GAMES.forEach(g=>{if(!FINAL[g.id])picks[g.id]=Math.random()<0.5?g.home:g.away;});savePicks();pop(true);render(true);}
+function pick(id,side){if(FINAL[id])return;const on=picks[id]!==side;if(on)picks[id]=side;else delete picks[id];savePicks();pop(on);render(true);}
 
 /* ---------- Standings engine ---------- */
 function compute(){
@@ -347,6 +348,20 @@ async function refreshOppRecords(){
       Object.values(o).forEach(walk);};
     walk(d);refreshSched();}catch(e){}
 }
+
+/* ---------- Pick sound: tiny synthesized pop (no audio file); on/off remembered ---------- */
+let AC=null,SOUND=true;
+try{SOUND=localStorage.getItem("afcnSound")!=="off";}catch(e){}
+function pop(up){if(!SOUND)return;try{
+  AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();
+  const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
+  o.type="sine";o.frequency.setValueAtTime(up?520:420,t);o.frequency.exponentialRampToValueAtTime(up?1150:170,t+0.07);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.32,t+0.006);g.gain.exponentialRampToValueAtTime(0.0001,t+0.12);
+  o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+0.13);}catch(e){}}
+const bSnd=document.getElementById("bSnd");
+function sndLabel(){bSnd.textContent="Sound: "+(SOUND?"on":"off");}
+bSnd.onclick=()=>{SOUND=!SOUND;try{localStorage.setItem("afcnSound",SOUND?"on":"off");}catch(e){}sndLabel();pop(true);};
+sndLabel();
 
 /* ---------- Boot ---------- */
 let built=false;
