@@ -127,7 +127,7 @@
 
   .legend{font:400 .72rem/1.55 var(--font); color:#8794ab; margin:18px 4px 0}
   .legend b{color:#c3cbd8}
-  .game .when{grid-column:1/-1; text-align:center; font:700 .58rem/1 var(--orb); letter-spacing:.16em; text-transform:uppercase; color:#9aa6bc; margin:-1px 0 3px}
+  .game .when{position:absolute; top:3px; left:0; right:0; text-align:center; font:700 .5rem/1 var(--orb); letter-spacing:.14em; text-transform:uppercase; color:#8794ab; pointer-events:none}
   .wk.cur .game .when{color:var(--gold)}
 </style>
 </head>
@@ -387,8 +387,7 @@ const WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MN=["Jan","Feb","Mar","Apr"
 function whenText(g){const w=WHEN[wkey(g.wk,g.home,g.away)];if(!w)return "";
   if(!w.m)return "Date TBD";
   const dt=new Date(w.m<6?2027:2026,w.m-1,w.d),ds=`${WD[dt.getDay()]} ${MN[w.m-1]} ${w.d}`;
-  if(FINAL[g.id]||!w.t)return ds;
-  return ds+" · "+(w.t==="TBD"?"Time TBD":w.t.replace(/a$/," AM").replace(/p$/," PM"));}
+  return ds;}
 async function refreshWhen(){let changed=false;
   const fmt=new Intl.DateTimeFormat("en-US",{timeZone:"America/Denver",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit",hour12:true});
   await Promise.all(ORDER.map(async t=>{try{
