@@ -569,7 +569,7 @@ function refreshResults(){
     ['utes','254','https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/254/schedule?season=2026&seasontype=2']
   ];
   SRC.forEach(function(s){
-    fetch(s[2]).then(function(r){return r.json();}).then(function(data){
+    espnSchedule(s[0]).then(function(data){
       var changed=false;
       (data.events||[]).forEach(function(ev){
         try{
@@ -587,6 +587,102 @@ function refreshResults(){
       });
       if(changed) applyResults();
     }).catch(function(){});
+  });
+}
+/* --- Live schedule: on load, read kickoff times + channels from ESPN and refresh the page (layout unchanged).
+   Only upcoming games change; dates/opponents are never invented; unknown channels and ESPN's TBD placeholder are ignored.
+   Steelers CBS/FOX Sunday games keep the Sunday Ticket logo. --- */
+var ESPN_SCHED={
+  pitt:'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/pit/schedule?season=2026&seasontype=2',
+  utes:'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/254/schedule?season=2026&seasontype=2'
+};
+var _espnCache={};
+function espnSchedule(team){
+  if(!_espnCache[team]) _espnCache[team]=fetch(ESPN_SCHED[team]).then(function(r){if(!r.ok) throw new Error('espn '+r.status); return r.json();});
+  return _espnCache[team];
+}
+function espnNet(team,comp){
+  var b=(comp.broadcasts||[]).slice().sort(function(x,y){
+    function nat(z){var t=z&&z.market&&(z.market.type||z.market); return /national/i.test(String(t||''))?0:1;}
+    return nat(x)-nat(y);
+  });
+  var names=[];
+  b.forEach(function(x){
+    if(x.media&&x.media.shortName) names.push(x.media.shortName);
+    if(x.names) names=names.concat(x.names);
+  });
+  for(var i=0;i<names.length;i++){
+    var n=String(names[i]).toUpperCase().trim();
+    if(team==='pitt'){
+      if(/^(CBS|FOX)$/.test(n)) return null;
+      if(/NBC|PEACOCK/.test(n)) return 'pcock';
+      if(/PRIME/.test(n)) return 'prime';
+      if(/^(ESPN|ESPN2|ABC|ESPN\+)$/.test(n)) return 'espn';
+      if(/^(NFL NETWORK|NFL NET|NFLN|NFL\+)$/.test(n)) return 'nfl';
+      if(/YOUTUBE/.test(n)) return 'yt';
+    } else {
+      if(/^(ESPN|ESPN2|ESPNU|ESPN\+|ABC|ESPNEWS)$/.test(n)) return 'espn';
+      if(/^(FOX|FS1)$/.test(n)) return 'fox';
+      if(/^(TNT|TRUTV|TBS|MAX|HBO MAX)$/.test(n)) return 'max';
+    }
+  }
+  return null;
+}
+function liveSchedule(){
+  if(!window.fetch||!window.Intl) return;
+  var fMT,fET;
+  try{
+    fMT=new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+    fET=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hourCycle:'h23'});
+  }catch(x){return;}
+  function parts(f,iso){var o={};f.formatToParts(new Date(iso)).forEach(function(p){o[p.type]=p.value;});return o;}
+  var foxBefore=(typeof FOX_PHASE==='string')?FOX_PHASE:null;
+  var TEAMS=[['pitt',steel,'23'],['utes',utes,'254']];
+  var jobs=TEAMS.map(function(t){
+    return espnSchedule(t[0]).then(function(data){
+      var evs=(data.events||[]).slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+      var used={},changed=false;
+      t[1].forEach(function(r){
+        if(!r[4]||/\(preseason\)/i.test(r[1])) return;
+        var key=r[4].replace(/_c$/,'').replace(/_/g,' ').toLowerCase();
+        for(var i=0;i<evs.length;i++){
+          if(used[i]) continue;
+          var ev=evs[i],comp=(ev.competitions||[])[0];
+          if(!comp||!comp.competitors) continue;
+          var opp=null;
+          comp.competitors.forEach(function(c){ if(String(c.id)!==t[2]) opp=c; });
+          var loc=opp&&opp.team?String(opp.team.location||'').toLowerCase():'';
+          if(loc!==key) continue;
+          used[i]=true;
+          if(comp.status&&comp.status.type&&comp.status.type.completed) return;
+          var et=parts(fET,ev.date);
+          var placeholder=(+et.hour%24===0&&+et.minute===0);
+          var valid=ev.timeValid!==false&&comp.timeValid!==false&&!placeholder;
+          if(valid){
+            var mt=parts(fMT,ev.date);
+            var ds=mt.weekday+' '+mt.month+' '+mt.day;
+            var ts=mt.hour+':'+mt.minute+String(mt.dayPeriod||'').charAt(0).toLowerCase();
+            if(/^\d{1,2}:\d{2}[ap]$/.test(ts)&&r[2]!==ts){r[2]=ts;changed=true;}
+            if(/^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2}$/.test(ds)&&r[0]!==ds){r[0]=ds;changed=true;}
+          }
+          var net=espnNet(t[0],comp);
+          if(net&&SVC_META[net]&&r[3]!==net){r[3]=net;changed=true;}
+          return;
+        }
+      });
+      return changed;
+    }).catch(function(){return false;});
+  });
+  Promise.all(jobs).then(function(res){
+    if(res.indexOf(true)<0) return;
+    renderTables();
+    renderComingUp();
+    renderKickClocks();
+    if(foxBefore&&typeof foxPhaseText==='function'){
+      var now=foxPhaseText();
+      document.querySelectorAll('#checklist .phase').forEach(function(el){ if(el.textContent===foxBefore) el.textContent=now; });
+      FOX_PHASE=now;
+    }
   });
 }
 function fillTable(id,rows,team){
@@ -841,6 +937,7 @@ function renderKickClocks(){
   window._kickTimer=setInterval(tickClocks,1000);
 }
 renderKickClocks();
+setTimeout(liveSchedule,0);
 
 /* --- What people are saying (RSS feeds via rss2json, past 48h, newest first) --- */
 function loadBuzz(){
@@ -970,14 +1067,15 @@ document.querySelectorAll('.inline-tv-logo').forEach(function(img){
 
 /* --- checklist --- */
 /* --- Fox One resume window (read from the Utes schedule; moves as TBD games get networks) --- */
-var FOX_PHASE=(function(){
+function foxPhaseText(){
   var MO='JanFebMarAprMayJunJulAugSepOctNovDec',now=new Date(),tbd=null,fox=null;
   for(var i=0;i<utes.length;i++){var r=utes[i],m=/([A-Z][a-z]{2}) (\d{1,2})/.exec(r[0]);if(!m)continue;
     var mo=MO.indexOf(m[1])/3,d=new Date(mo<6?2027:2026,mo,+m[2],23,59);if(d<now)continue;
     if(!tbd&&r[3]==='tbd')tbd={d:d,t:r[0]+' '+r[1]};if(!fox&&r[3]==='fox')fox={d:d,t:r[0]+' '+r[1]};}
   if(tbd&&(!fox||tbd.d<fox.d))return 'Resume Fox One as early as '+tbd.t+' (only if it lands on FOX)'+(fox?' · by '+fox.t+' at the latest':'');
   return fox?'Resume Fox One by '+fox.t+' (FOX)':'Resume Fox One only if a Utes game lands on FOX';
-})();
+}
+var FOX_PHASE=foxPhaseText();
 var plan=[
  ["PHASE","Before Sep 4 ⚠ MOST IMPORTANT"],
  ["item","c4","<img src='data:image/png;base64,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' width='18' height='18' style='vertical-align:middle;margin-right:4px'> Buy <b>NFL Sunday Ticket</b>","<span class='warn'>New-customer $204 price ends at kickoff.</span> Use wife's new Google acct in YouTube app","204","big","yt"],
