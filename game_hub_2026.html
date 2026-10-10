@@ -970,7 +970,7 @@ renderKickClocks();
 setTimeout(liveSchedule,0);
 /* --- Game alerts: helmet toggle + first-open ask. Preview-only (?preview=1) until ALERTS_RELEASED --- */
 var ALERTS_API='https://gamehub-alerts.cfredrickson.workers.dev';
-var ALERTS_RELEASED=false;
+var ALERTS_RELEASED=true;
 (function(){
   var b=document.getElementById('alert-tog'), ask=document.getElementById('alert-ask'), toast=document.getElementById('alert-toast');
   if(!b) return;
