@@ -53,6 +53,18 @@ nav.tabs button.alert-tog.show{display:flex}
 .alert-tog .ht svg{position:absolute;left:-12%;top:-12%;width:124%;height:124%;overflow:visible;transition:opacity .2s}
 .alert-tog.off .ht img{opacity:.3;filter:grayscale(1)}
 .alert-tog.off .ht svg{opacity:0}
+.alert-ask{display:none;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.alert-ask.show{display:flex}
+.alert-ask img{width:40px;height:40px;object-fit:contain;flex-shrink:0}
+.alert-ask .aa-txt{flex:1;min-width:0}
+.alert-ask .aa-txt b{display:block;font-size:.98rem;color:var(--ink)}
+.alert-ask .aa-txt span{display:block;font-size:.8rem;color:#666;margin-top:2px}
+.alert-ask .aa-btns{display:flex;flex-direction:column;gap:6px;flex:0 0 92px}
+.alert-ask button{border:0;border-radius:16px;padding:7px 0;width:92px;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.alert-ask .aa-on{background:#101820;color:#FFB612}
+.alert-ask .aa-no{background:transparent;color:#888}
+.alert-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#101820;color:#fff;font-size:.86rem;padding:10px 16px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:50;max-width:88vw;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none}
+.alert-toast.show{opacity:1}
 #tab-up.active{border-bottom-color:#FFB612;background:rgba(255,182,18,.10)}
 #tab-cal.active{border-bottom-color:#C60C30;background:rgba(198,12,48,.08)}
 #tab-plan.active{border-bottom-color:#A5ACAF;background:rgba(165,172,175,.16)}
@@ -415,6 +427,8 @@ tr.played:hover td.app>*,tr.played:hover td.opp>div>:not(.wl-slot){opacity:.7}
 
 <!-- ===== CALENDAR ===== -->
 <section id="up" class="panel active">
+  <div id="alert-ask" class="alert-ask"><img src="alert-helmet.png" alt=""><div class="aa-txt"><b>Get game alerts?</b><span>Game times, plus 72 hours and 1 hour before kickoff</span></div><div class="aa-btns"><button class="aa-on" onclick="alertsAskOn()">Turn on</button><button class="aa-no" onclick="alertsAskLater()">Not now</button></div></div>
+  <div id="alert-toast" class="alert-toast"></div>
   <div id="kick-clocks" class="kick-clocks"></div>
   <div id="coming-up-content"></div>
   <div class="buzz-section">
@@ -954,21 +968,76 @@ function renderKickClocks(){
 }
 renderKickClocks();
 setTimeout(liveSchedule,0);
-/* --- Game alerts toggle: shown only in preview (?preview=1) until the alert service is live --- */
+/* --- Game alerts: helmet toggle + first-open ask. Preview-only (?preview=1) until ALERTS_RELEASED --- */
+var ALERTS_API='https://gamehub-alerts.cfredrickson.workers.dev';
+var ALERTS_RELEASED=false;
 (function(){
-  var b=document.getElementById('alert-tog'); if(!b) return;
+  var b=document.getElementById('alert-tog'), ask=document.getElementById('alert-ask'), toast=document.getElementById('alert-toast');
+  if(!b) return;
   var pv=false;
   try{
     if(/[?&]preview=1/.test(location.search)) localStorage.setItem('ghPreview','1');
     if(/[?&]preview=0/.test(location.search)) localStorage.removeItem('ghPreview');
     pv=localStorage.getItem('ghPreview')==='1';
   }catch(e){}
-  if(!pv) return;
+  if(!pv && !ALERTS_RELEASED) return;
   b.classList.add('show');
-  var on=false; try{on=localStorage.getItem('ghAlertsPreview')==='1';}catch(e){}
+  var supported=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
+  var isIOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var on=false, busy=false;
   function paint(){ b.classList.toggle('off',!on); b.setAttribute('aria-pressed',on?'true':'false'); }
+  function say(t){ if(!toast) return; toast.textContent=t; toast.classList.add('show'); clearTimeout(say._t); say._t=setTimeout(function(){toast.classList.remove('show');},3200); }
+  function u8(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; var r=atob(s), o=new Uint8Array(r.length); for(var i=0;i<r.length;i++) o[i]=r.charCodeAt(i); return o; }
+  function reg(){ return navigator.serviceWorker.register('sw.js').then(function(){ return navigator.serviceWorker.ready; }); }
+  function hideAsk(){ if(ask) ask.classList.remove('show'); }
+  function turnOn(){
+    if(!supported){ say(isIOS?'Open Game Hub from your home screen icon to turn on alerts':'This browser can\'t show alerts'); return Promise.resolve(false); }
+    return Notification.requestPermission().then(function(p){
+      if(p!=='granted'){ say(p==='denied'?'Alerts are blocked in your phone settings for Game Hub':'Alerts not turned on'); return false; }
+      return Promise.all([reg(), fetch(ALERTS_API+'/vapid').then(function(r){return r.json();})]).then(function(x){
+        return x[0].pushManager.getSubscription().then(function(old){ return old || x[0].pushManager.subscribe({userVisibleOnly:true, applicationServerKey:u8(x[1].key)}); });
+      }).then(function(sub){
+        return fetch(ALERTS_API+'/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sub:sub.toJSON()})}).then(function(r){ if(!r.ok) throw new Error('subscribe'); return true; });
+      });
+    }).catch(function(){ say('Couldn\'t turn on alerts. Try again in a minute.'); return false; });
+  }
+  function turnOff(){
+    return reg().then(function(r){ return r.pushManager.getSubscription(); }).then(function(sub){
+      if(!sub) return true;
+      return fetch(ALERTS_API+'/unsubscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:sub.endpoint})}).catch(function(){}).then(function(){ return sub.unsubscribe(); });
+    }).then(function(){ return true; }).catch(function(){ return false; });
+  }
+  window.toggleAlerts=function(){
+    if(busy) return; busy=true;
+    (on ? turnOff().then(function(ok){ if(ok){ on=false; say('Game alerts off'); try{ localStorage.setItem('ghAskNo','9'); }catch(e){} } })
+        : turnOn().then(function(ok){ if(ok){ on=true; hideAsk(); say('Game alerts on'); } }))
+      .then(function(){ busy=false; paint(); });
+  };
+  window.alertsAskOn=function(){ window.toggleAlerts(); };
+  window.alertsAskLater=function(){ hideAsk(); try{ var n=+(localStorage.getItem('ghAskNo')||0); localStorage.setItem('ghAskNo',String(n+1)); localStorage.setItem('ghAskAt',String(Date.now())); }catch(e){} };
+  function nextKick(){
+    var KM={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11}, best=null, now=Date.now();
+    [steel,utes].forEach(function(a){ a.forEach(function(r){
+      var p=String(r[0]).split(' '); if(p.length<3||KM[p[1]]===undefined) return;
+      var t=/^(\d{1,2}):(\d{2})([ap])/.exec(r[2]||''), h=12, mi=0;
+      if(t){ h=+t[1]; mi=+t[2]; if(t[3]==='p'&&h<12) h+=12; if(t[3]==='a'&&h===12) h=0; }
+      var mo=KM[p[1]], d=new Date(mo<6?2027:2026,mo,+p[2],h,mi).getTime();
+      if(d>now&&(!best||d<best)) best=d;
+    }); });
+    return best;
+  }
+  function maybeAsk(){
+    if(!ask||on) return;
+    if(supported && Notification.permission==='denied') return;
+    var n=0, at=0; try{ n=+(localStorage.getItem('ghAskNo')||0); at=+(localStorage.getItem('ghAskAt')||0); }catch(e){}
+    if(n===0){ ask.classList.add('show'); return; }
+    if(n===1){ var k=nextKick(); if(k && k-Date.now()<72*3600e3 && Date.now()-at>24*3600e3) ask.classList.add('show'); }
+  }
   paint();
-  window.toggleAlerts=function(){ on=!on; paint(); try{localStorage.setItem('ghAlertsPreview',on?'1':'0');}catch(e){} };
+  if(supported){
+    navigator.serviceWorker.getRegistration().then(function(r){ return r ? r.pushManager.getSubscription() : null; })
+      .then(function(s){ on=!!s; paint(); maybeAsk(); }).catch(function(){ maybeAsk(); });
+  } else maybeAsk();
 })();
 if('serviceWorker' in navigator && location.protocol==='https:'){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 
