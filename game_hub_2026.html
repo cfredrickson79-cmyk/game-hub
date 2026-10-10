@@ -46,6 +46,13 @@ nav.tabs{position:sticky;top:0;z-index:20;background:var(--card);display:flex;bo
 nav.tabs button{flex:1;border:0;background:none;padding:15px 8px;font-size:.95rem;font-weight:700;color:#888;cursor:pointer;border-bottom:4px solid transparent;transition:all .15s}
 nav.tabs button:hover{color:var(--ink);background:#fafafa}
 nav.tabs button.active{color:var(--ink)}
+nav.tabs button.alert-tog{flex:0 0 52px;padding:0;display:none;align-items:center;justify-content:center;border-left:1px solid var(--line)}
+nav.tabs button.alert-tog.show{display:flex}
+.alert-tog .ht{position:relative;width:28px;height:28px;display:block}
+.alert-tog .ht img{width:100%;height:100%;object-fit:contain;transition:opacity .2s,filter .2s}
+.alert-tog .ht svg{position:absolute;left:-12%;top:-12%;width:124%;height:124%;overflow:visible;transition:opacity .2s}
+.alert-tog.off .ht img{opacity:.3;filter:grayscale(1)}
+.alert-tog.off .ht svg{opacity:0}
 #tab-up.active{border-bottom-color:#FFB612;background:rgba(255,182,18,.10)}
 #tab-cal.active{border-bottom-color:#C60C30;background:rgba(198,12,48,.08)}
 #tab-plan.active{border-bottom-color:#A5ACAF;background:rgba(165,172,175,.16)}
@@ -401,6 +408,7 @@ tr.played:hover td.app>*,tr.played:hover td.opp>div>:not(.wl-slot){opacity:.7}
   <button id="tab-cal" onclick="show('cal')">Schedule</button>
   <button id="tab-afcn" onclick="show('afcn')">AFCN</button>
   <button id="tab-plan" onclick="show('plan')">Cost</button>
+  <button id="alert-tog" class="alert-tog off" aria-label="Game alerts" onclick="toggleAlerts()"><span class="ht"><img src="alert-helmet.png" alt=""><svg viewBox="0 0 100 100"><path d="M69.2 15.5 A11 11 0 0 1 76.5 22.8" fill="none" stroke="#FFB612" stroke-width="4.5" stroke-linecap="round"/><path d="M71.0 9.7 A17 17 0 0 1 82.3 21.0" fill="none" stroke="#FFB612" stroke-width="4.5" stroke-linecap="round"/></svg></span></button>
 </nav>
 
 <div class="wrap">
@@ -946,6 +954,22 @@ function renderKickClocks(){
 }
 renderKickClocks();
 setTimeout(liveSchedule,0);
+/* --- Game alerts toggle: shown only in preview (?preview=1) until the alert service is live --- */
+(function(){
+  var b=document.getElementById('alert-tog'); if(!b) return;
+  var pv=false;
+  try{
+    if(/[?&]preview=1/.test(location.search)) localStorage.setItem('ghPreview','1');
+    if(/[?&]preview=0/.test(location.search)) localStorage.removeItem('ghPreview');
+    pv=localStorage.getItem('ghPreview')==='1';
+  }catch(e){}
+  if(!pv) return;
+  b.classList.add('show');
+  var on=false; try{on=localStorage.getItem('ghAlertsPreview')==='1';}catch(e){}
+  function paint(){ b.classList.toggle('off',!on); b.setAttribute('aria-pressed',on?'true':'false'); }
+  paint();
+  window.toggleAlerts=function(){ on=!on; paint(); try{localStorage.setItem('ghAlertsPreview',on?'1':'0');}catch(e){} };
+})();
 if('serviceWorker' in navigator && location.protocol==='https:'){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 
 /* --- What people are saying (RSS feeds via rss2json, past 48h, newest first) --- */
