@@ -638,6 +638,14 @@ function liveSchedule(){
     }
   });
 }
+/* --- High-res opponent logos (ESPN 500px); the hub's small saved copies stay as the fallback --- */
+var NFLABBR={green_bay:'gb',ny_jets:'nyj',buffalo:'buf',atlanta:'atl',new_england:'ne',cincinnati:'cin',cleveland:'cle',indianapolis:'ind',tampa_bay:'tb',new_orleans:'no',philadelphia:'phi',denver:'den',baltimore:'bal',carolina:'car',jacksonville:'jax',tennessee:'ten',houston:'hou'};
+var HIRES_CFB={idaho:70,arkansas:8,utah_state:328,iowa_state:66,kansas:2305,colorado:38,houston_c:248,cincinnati_c:2132,byu:252,arizona:12,tcu:2628,west_virginia:277};
+function oppHiRes(team,key){
+  if(team==='pitt') return NFLABBR[key]?'https://a.espncdn.com/i/teamlogos/nfl/500/'+NFLABBR[key]+'.png':null;
+  return HIRES_CFB[key]?'https://a.espncdn.com/i/teamlogos/ncaa/500/'+HIRES_CFB[key]+'.png':null;
+}
+document.addEventListener('error',function(e){ var t=e.target, lo=t&&t.getAttribute&&t.getAttribute('data-lo'); if(t.tagName==='IMG'&&lo){ t.removeAttribute('data-lo'); t.src=lo; } },true);
 function fillTable(id,rows,team){
   var h='';
   var tl=customLogos[team];
@@ -672,7 +680,8 @@ function fillTable(id,rows,team){
     var oLogo='';
     if(r.length>4 && r[4] && oppLogos[r[4]]){
       var ol=oppLogos[r[4]];
-      oLogo="<img src='"+ol.src+"' class='cal-logo'>";
+      var hi=oppHiRes(team,r[4]);
+      oLogo="<img src='"+(hi||ol.src)+"'"+(hi?" data-lo='"+ol.src+"'":"")+" class='cal-logo' alt=''>";
     }
     var tLogo='';
     if(tl&&tl.src) tLogo="<img src='"+tl.src+"' class='cal-logo'>";
@@ -793,14 +802,10 @@ function renderKickClocks(){
   var box=document.getElementById('kick-clocks');
   if(!box) return;
   var KM={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-  var NFLABBR={green_bay:'gb',ny_jets:'nyj',buffalo:'buf',atlanta:'atl',new_england:'ne',cincinnati:'cin',cleveland:'cle',indianapolis:'ind',tampa_bay:'tb',new_orleans:'no',philadelphia:'phi',denver:'den',baltimore:'bal',carolina:'car',jacksonville:'jax',tennessee:'ten',houston:'hou'};
-  var HIRES_CFB={idaho:70,arkansas:8,utah_state:328,iowa_state:66,kansas:2305,colorado:38,houston_c:248,cincinnati_c:2132,byu:252,arizona:12,tcu:2628,west_virginia:277};
+
   var TEAMHI={pitt:'https://a.espncdn.com/i/teamlogos/nfl/500/pit.png',utes:'https://a.espncdn.com/i/teamlogos/ncaa/500/254.png'};
   var NFLNICK={green_bay:'Packers',ny_jets:'Jets',buffalo:'Bills',atlanta:'Falcons',new_england:'Patriots',cincinnati:'Bengals',cleveland:'Browns',indianapolis:'Colts',tampa_bay:'Buccaneers',new_orleans:'Saints',philadelphia:'Eagles',denver:'Broncos',baltimore:'Ravens',carolina:'Panthers',jacksonville:'Jaguars',tennessee:'Titans',houston:'Texans'};
-  function oppHi(tkey,key){
-    if(tkey==='pitt') return NFLABBR[key]?'https://a.espncdn.com/i/teamlogos/nfl/500/'+NFLABBR[key]+'.png':null;
-    return HIRES_CFB[key]?'https://a.espncdn.com/i/teamlogos/ncaa/500/'+HIRES_CFB[key]+'.png':null;
-  }
+  function oppHi(tkey,key){ return oppHiRes(tkey,key); }
   function kickoff(dstr,tstr){
     var p=dstr.split(' ');
     if(p.length<3) return null;
