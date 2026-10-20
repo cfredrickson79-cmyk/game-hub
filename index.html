@@ -70,7 +70,6 @@ nav.tabs button.alert-tog.show{display:flex}
 #tab-plan.active{border-bottom-color:#A5ACAF;background:rgba(165,172,175,.16)}
 #tab-conf.active{border-bottom-color:#00539B;background:rgba(0,83,155,.08)}
 .conf-card .teamhead .conf-hlogo{width:36px;height:36px;object-fit:contain}
-.utes.conf-card .teamhead .conf-hlogo{background:#fff;border-radius:50%;padding:4px;box-sizing:border-box}
 .conf-card .conf-body.collapsed{display:none}
 .conf-body{padding:4px 0 0}
 .cf-row{display:grid;grid-template-columns:30px 1fr 64px 64px;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:.9rem}
@@ -244,6 +243,7 @@ td.opp{line-height:1.3;vertical-align:middle}
 .kick-lbl{display:block;font-size:.56rem;letter-spacing:.1em;color:#8a8f98;margin-top:3px}
 #coming-up-content{display:none}
 .head-clock{display:flex;align-items:flex-start;gap:2px;margin-left:auto;margin-right:10px}
+.head-clock+.collapse-arrow{margin-left:0}
 .head-clock .hc-g{display:flex;flex-direction:column;align-items:center}
 .head-clock .hc-d,.head-clock .hc-c{font-family:'DSEG7';font-weight:bold;font-size:15px;color:#fff;letter-spacing:1px}
 .head-clock .hc-l{font-size:.48rem;letter-spacing:.08em;color:rgba(255,255,255,.75);margin-top:1px}
@@ -404,7 +404,7 @@ tr.played:hover td.app>*,tr.played:hover td.opp>div>:not(.wl-slot){opacity:.7}
              ondrop="inlineDrop(event,'pitt')" ondragover="dzOver(event)" ondragleave="dzLeave(event)">
           <svg width="36" height="36"><use href="#pitt-logo"/></svg>
         </div>
-        <h2>Pittsburgh Steelers</h2><span class="collapse-arrow"></span>
+        <h2>Steelers</h2><span class="collapse-arrow"></span>
       </div>
       <table id="steelTable"></table>
     </div>
@@ -414,7 +414,7 @@ tr.played:hover td.app>*,tr.played:hover td.opp>div>:not(.wl-slot){opacity:.7}
              ondrop="inlineDrop(event,'utes')" ondragover="dzOver(event)" ondragleave="dzLeave(event)">
           <svg width="36" height="36"><use href="#utes-logo"/></svg>
         </div>
-        <h2>Utah Utes</h2><span class="collapse-arrow"></span>
+        <h2>Utes</h2><span class="collapse-arrow"></span>
       </div>
       <table id="uteTable"></table>
       <div class="note utes-note"><b>TBD Utah games:</b> the network is announced ~2 weeks before kickoff. Cameron will text you the app.<br><br>It's almost always <img class="inline-tv-logo" src="" data-svc="espn" alt="ESPN"> or <img class="inline-tv-logo" src="" data-svc="fox" alt="Fox">.</div>
@@ -773,6 +773,7 @@ document.querySelectorAll('.teamhead').forEach(function(th){
 
 /* --- Conf tab: AFC North + Big 12 standings, with picks for this week's games only (picks reset on reload) --- */
 var CONF=(function(){
+  (function(){var u=document.querySelector('.conf-card[data-conf="b12"] .conf-hlogo');if(u&&customLogos.utes&&customLogos.utes.src)u.src=customLogos.utes.src;})();
   var API='https://site.api.espn.com/apis';
   var MTF=new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver',weekday:'short',hour:'numeric',minute:'2-digit',hour12:true});
   function when(iso,tbd){var p={};MTF.formatToParts(new Date(iso)).forEach(function(x){p[x.type]=x.value;});
