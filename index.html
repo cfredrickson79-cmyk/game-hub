@@ -68,11 +68,47 @@ nav.tabs button.alert-tog.show{display:flex}
 #tab-up.active{border-bottom-color:#FFB612;background:rgba(255,182,18,.10)}
 #tab-cal.active{border-bottom-color:#C60C30;background:rgba(198,12,48,.08)}
 #tab-plan.active{border-bottom-color:#A5ACAF;background:rgba(165,172,175,.16)}
-#tab-afcn.active{border-bottom-color:#00539B;background:rgba(0,83,155,.08)}
-#afcn{padding-top:12px}
-.afcn-frame{display:block;width:100%;height:calc(100vh - 84px);height:calc(100dvh - 84px);min-height:520px;border:0;border-radius:16px;background:#05060a;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-@media(max-width:720px){.afcn-frame{height:calc(100vh - 66px);height:calc(100dvh - 66px);border-radius:12px}}
-@media(max-width:480px){.afcn-frame{height:calc(100vh - 60px);height:calc(100dvh - 60px)}}
+#tab-conf.active{border-bottom-color:#00539B;background:rgba(0,83,155,.08)}
+.conf-card .teamhead .conf-hlogo{width:36px;height:36px;object-fit:contain}
+.utes.conf-card .teamhead .conf-hlogo{background:#fff;border-radius:50%;padding:4px;box-sizing:border-box}
+.conf-card .conf-body.collapsed{display:none}
+.conf-body{padding:4px 0 0}
+.cf-row{display:grid;grid-template-columns:30px 1fr 64px 64px;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:.9rem}
+.cf-row.cf-hd{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#888;padding-top:6px;padding-bottom:6px}
+.cf-row .c{text-align:center;font-variant-numeric:tabular-nums}
+.cf-row .rk{text-align:center;font-weight:800;color:#999}
+.cf-row .tm{display:flex;align-items:center;gap:9px;min-width:0}
+.cf-row .tm img{width:30px;height:30px;object-fit:contain;flex-shrink:0}
+.cf-row .tm span{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cf-row .mv{display:inline-block;min-width:26px;font-size:.72rem;font-weight:800;margin-left:2px}
+.cf-row .mv.up{color:#1a8a3a}.cf-row .mv.dn{color:#c62828}
+.cf-row.mine .tm span:not(.mv){color:#000}
+.pitt .cf-row.mine{background:rgba(255,182,18,.16)}
+.utes .cf-row.mine{background:rgba(204,0,0,.09)}
+.cf-row.cut{border-bottom:2px solid #bbb}
+.cf-row.moved{animation:cfpop .6s ease}
+@keyframes cfpop{0%{background:rgba(0,83,155,.18)}100%{background:transparent}}
+.cf-note{font-size:.76rem;color:#777;padding:8px 14px 2px}
+.cf-wk{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 6px}
+.cf-wk b{font-size:.95rem}
+.cf-clear{flex:0 0 96px;width:96px;border:1px solid var(--line);background:#fff;border-radius:14px;padding:5px 0;font-size:.78rem;font-weight:700;color:#555;cursor:pointer}
+.cf-clear[disabled]{opacity:.35;cursor:default}
+.cf-game{display:grid;grid-template-columns:1fr 92px 1fr;align-items:center;gap:6px;margin:6px 10px;padding:6px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.cf-side{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:9px;border:2px solid transparent;cursor:pointer;min-width:0;transition:opacity .15s,background .15s}
+.cf-side.home{flex-direction:row-reverse;text-align:right}
+.cf-side img{width:34px;height:34px;object-fit:contain;flex-shrink:0}
+.cf-side .nm{font-weight:800;font-size:.95rem;white-space:nowrap}
+.cf-side .rc{display:block;font-size:.7rem;color:#888;font-weight:600}
+.pitt .cf-side.win{background:rgba(255,182,18,.22);border-color:#FFB612}
+.utes .cf-side.win{background:rgba(204,0,0,.12);border-color:#CC0000}
+.cf-side.lose{opacity:.38}
+.cf-side.locked{cursor:default}
+.cf-mid{text-align:center;font-size:.74rem;color:#777;line-height:1.3}
+.cf-mid b{display:block;font-size:.84rem;color:#333}
+.cf-mid .fin{color:#1a8a3a;font-weight:700}
+.cf-foot{font-size:.76rem;color:#888;padding:6px 14px 14px}
+.cf-msg{padding:16px;font-size:.88rem;color:#777}
+@media(max-width:480px){.cf-row{grid-template-columns:24px 1fr 52px 52px;padding:7px 10px;font-size:.84rem}.cf-row .tm img{width:26px;height:26px}.cf-game{grid-template-columns:1fr 78px 1fr;margin:6px 6px}.cf-side{padding:5px 4px;gap:6px}.cf-side img{width:28px;height:28px}.cf-side .nm{font-size:.86rem}}
 .panel{display:none;padding-top:16px}
 .panel.active{display:block}
 
@@ -341,7 +377,7 @@ tr.played:hover td.app>*,tr.played:hover td.opp>div>:not(.wl-slot){opacity:.7}
 <nav class="tabs">
   <button id="tab-up" class="active" onclick="show('up')">Coming Up</button>
   <button id="tab-cal" onclick="show('cal')">Schedule</button>
-  <button id="tab-afcn" onclick="show('afcn')">AFCN</button>
+  <button id="tab-conf" onclick="show('conf')">Conf</button>
   <button id="tab-plan" onclick="show('plan')">Cost</button>
   <button id="alert-tog" class="alert-tog off" aria-label="Game alerts" onclick="toggleAlerts()"><span class="ht"><img src="alert-helmet.png" alt=""><svg viewBox="0 0 100 100"><path d="M69.2 15.5 A11 11 0 0 1 76.5 22.8" fill="none" stroke="#FFB612" stroke-width="4.5" stroke-linecap="round"/><path d="M71.0 9.7 A17 17 0 0 1 82.3 21.0" fill="none" stroke="#FFB612" stroke-width="4.5" stroke-linecap="round"/></svg></span></button>
 </nav>
@@ -387,8 +423,17 @@ tr.played:hover td.app>*,tr.played:hover td.opp>div>:not(.wl-slot){opacity:.7}
 </section>
 
 <!-- ===== PLAN ===== -->
-<section id="afcn" class="panel">
-  <iframe class="afcn-frame" src="afcn.html" title="AFC North what-if standings"></iframe>
+<section id="conf" class="panel">
+<div class="grid">
+  <div class="teamcard pitt conf-card" data-conf="afcn">
+    <div class="teamhead"><img class="conf-hlogo" src="logos/nfl/pit.png" alt=""><h2>AFC North</h2><span class="collapse-arrow"></span></div>
+    <div class="conf-body"></div>
+  </div>
+  <div class="teamcard utes conf-card" data-conf="b12">
+    <div class="teamhead"><img class="conf-hlogo" src="logos/ncaa/254.png" alt=""><h2>Big 12</h2><span class="collapse-arrow"></span></div>
+    <div class="conf-body"></div>
+  </div>
+</div>
 </section>
 
 <section id="plan" class="panel">
@@ -423,7 +468,7 @@ var customLogos = {pcock:{src:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEA
 function show(id){
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
   document.getElementById(id).classList.add('active');
-  ['tab-up','tab-cal','tab-plan','tab-afcn'].forEach(function(t){
+  ['tab-up','tab-cal','tab-plan','tab-conf'].forEach(function(t){
     document.getElementById(t).classList.toggle('active',t==='tab-'+id);
   });
   if(id==='up') renderComingUp();
@@ -725,6 +770,168 @@ document.querySelectorAll('.teamhead').forEach(function(th){
     });
   }
 });
+
+/* --- Conf tab: AFC North + Big 12 standings, with picks for this week's games only (picks reset on reload) --- */
+var CONF=(function(){
+  var API='https://site.api.espn.com/apis';
+  var MTF=new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver',weekday:'short',hour:'numeric',minute:'2-digit',hour12:true});
+  function when(iso,tbd){var p={};MTF.formatToParts(new Date(iso)).forEach(function(x){p[x.type]=x.value;});
+    return p.weekday+' '+(tbd?'TBD':p.hour+':'+p.minute+(p.dayPeriod==='AM'?'a':'p'));}
+  function getJ(u){return fetch(u,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});}
+  function findEntries(o){if(!o||typeof o!=='object')return null;if(Array.isArray(o.entries))return o.entries;
+    for(var k in o){var r=findEntries(o[k]);if(r)return r;}return null;}
+  function allEntries(o,out){if(!o||typeof o!=='object')return out;if(Array.isArray(o.entries))o.entries.forEach(function(e){out.push(e);});
+    for(var k in o){if(k!=='entries')allEntries(o[k],out);}return out;}
+  function stats(e){var s={};(e.stats||[]).forEach(function(x){s[x.type]=x;});return s;}
+  function rec(s){var m=/^(\d+)-(\d+)(?:-(\d+))?$/.exec(s||'');return m?[+m[1],+m[2],+(m[3]||0)]:[0,0,0];}
+  function pct(w,l,t){var g=w+l+t;return g?(w+t/2)/g:0;}
+  function score(c){var s=c.score;if(s&&typeof s==='object')s=s.displayValue;return s==null?'':String(s);}
+  var nflLogo=function(ab){return 'logos/nfl/'+ab.toLowerCase()+'.png';};
+  var cfbLogo=function(id){return 'logos/ncaa/'+id+'.png';};
+  function img(src,alt){var fb=src.indexOf('logos/nfl/')===0?'https://a.espncdn.com/i/teamlogos/nfl/500/'+src.slice(10):'https://a.espncdn.com/i/teamlogos/ncaa/500/'+src.slice(11);
+    return '<img src="'+src+'" data-lo="'+fb+'" alt="'+alt+'" onerror="if(this.dataset.lo){this.src=this.dataset.lo;this.removeAttribute(\'data-lo\');}">';}
+
+  /* one model per conference: base standings + this week's games; picks layer on top */
+  var M={afcn:{picks:{},loaded:false},b12:{picks:{},loaded:false}};
+
+  /* ---------- AFC North ---------- */
+  var AFCN=['PIT','BAL','CIN','CLE'],AFCN_ID={PIT:23,BAL:33,CIN:4,CLE:5};
+  function loadAfcn(){
+    var m=M.afcn;
+    return Promise.all([getJ(API+'/v2/sports/football/nfl/standings')].concat(AFCN.map(function(t){
+      return getJ(API+'/site/v2/sports/football/nfl/teams/'+t.toLowerCase()+'/schedule?season=2026&seasontype=2');})))
+    .then(function(r){
+      var st=r[0],afc={},team={},rest={};
+      (st.children||[]).forEach(function(c){var ents=findEntries(c)||[];ents.forEach(function(e){
+        var ab=e.team.abbreviation,s=stats(e),tot=rec(s.total&&s.total.displayValue);
+        rest[ab]=tot[0]+'-'+tot[1]+(tot[2]?'-'+tot[2]:'');if(c.abbreviation==='AFC')afc[ab]=1;
+        if(AFCN.indexOf(ab)>=0){var dv=rec(s.vsdiv&&s.vsdiv.displayValue),cf=rec(s.vsconf&&s.vsconf.displayValue);
+          team[ab]={code:ab,name:e.team.location,w:tot[0],l:tot[1],t:tot[2],dw:dv[0],dl:dv[1],dt:dv[2],cw:cf[0],cl:cf[1],ct:cf[2],
+            seed:+((s.playoffseed&&s.playoffseed.value)||99)};}});});
+      /* finals between division teams (head-to-head) and this week's games */
+      var evs={},h2h=[],week=99;
+      r.slice(1).forEach(function(d){(d.events||[]).forEach(function(ev){evs[ev.id]=ev;});});
+      Object.keys(evs).forEach(function(id){var ev=evs[id],c=ev.competitions[0];
+        if(!c.status.type.completed&&ev.week&&ev.week.number<week)week=ev.week.number;});
+      var games=[];
+      Object.keys(evs).forEach(function(id){var ev=evs[id],c=ev.competitions[0],cs=c.competitors||[];
+        var H=cs.filter(function(x){return x.homeAway==='home';})[0],A=cs.filter(function(x){return x.homeAway==='away';})[0];if(!H||!A)return;
+        var h=H.team.abbreviation,a=A.team.abbreviation,done=c.status.type.completed;
+        if(done&&AFCN.indexOf(h)>=0&&AFCN.indexOf(a)>=0){var hs=+score(H),as=+score(A);if(hs!==as)h2h.push(hs>as?[h,a]:[a,h]);}
+        if(ev.week&&ev.week.number===week)games.push({id:id,ts:Date.parse(ev.date),home:h,away:a,done:done,
+          hs:score(H),as:score(A),detail:c.status.type.shortDetail,state:c.status.type.state,
+          when:when(ev.date,c.timeValid===false||ev.timeValid===false),
+          conf:!!(afc[h]&&afc[a]),div:AFCN.indexOf(h)>=0&&AFCN.indexOf(a)>=0});});
+      games.sort(function(x,y){return x.ts-y.ts;});
+      m.base=team;m.h2h=h2h;m.week=week;m.games=games;m.rest=rest;m.afc=afc;m.loaded=true;
+    });
+  }
+  function afcnTable(m){
+    var T={};AFCN.forEach(function(c){var b=m.base[c];if(b)T[c]=JSON.parse(JSON.stringify(b));});
+    var h2h=m.h2h.slice(),touched={};
+    m.games.forEach(function(g){var w=m.picks[g.id];if(!w||g.done)return;var l=w===g.home?g.away:g.home;
+      [w,l].forEach(function(x){touched[x]=1;});
+      if(T[w]){T[w].w++;if(g.div)T[w].dw++;if(g.conf)T[w].cw++;}
+      if(T[l]){T[l].l++;if(g.div)T[l].dl++;if(g.conf)T[l].cl++;}
+      if(g.div)h2h.push([w,l]);});
+    var arr=Object.keys(T).map(function(k){var x=T[k];x.p=pct(x.w,x.l,x.t);x.dp=pct(x.dw,x.dl,x.dt);x.cp=pct(x.cw,x.cl,x.ct);return x;});
+    function hh(a,b){var n=0;h2h.forEach(function(r){if(r[0]===a&&r[1]===b)n++;if(r[0]===b&&r[1]===a)n--;});return n;}
+    arr.sort(function(a,b){if(b.p!==a.p)return b.p-a.p;
+      if(touched[a.code]||touched[b.code]){var n=hh(a.code,b.code);if(n)return -n;if(b.dp!==a.dp)return b.dp-a.dp;if(b.cp!==a.cp)return b.cp-a.cp;}
+      return a.seed-b.seed;});
+    return arr.map(function(x){return {key:x.code,name:x.name||x.code,logo:nflLogo(x.code),c1:x.w+'-'+x.l+(x.t?'-'+x.t:''),c2:x.dw+'-'+x.dl+(x.dt?'-'+x.dt:''),mine:x.code==='PIT'};});
+  }
+
+  /* ---------- Big 12 ---------- */
+  function loadB12(){
+    var m=M.b12;
+    return Promise.all([getJ(API+'/v2/sports/football/college-football/standings?group=4&season=2026'),
+      getJ(API+'/site/v2/sports/football/college-football/scoreboard?groups=4')]).then(function(r){
+      var team={};(findEntries(r[0])||[]).forEach(function(e){var s=stats(e),tot=rec(s.total&&s.total.displayValue),cf=rec(s.vsconf&&s.vsconf.displayValue);
+        team[e.team.id]={id:e.team.id,name:e.team.location,ab:e.team.abbreviation,w:tot[0],l:tot[1],cw:cf[0],cl:cf[1],seed:+((s.playoffseed&&s.playoffseed.value)||99)};});
+      m.base=team;
+      var sb=r[1],evs=sb.events||[],wk=sb.week&&sb.week.number;
+      var allDone=evs.length&&evs.every(function(ev){return ev.competitions[0].status.type.completed;});
+      return (allDone&&wk?getJ(API+'/site/v2/sports/football/college-football/scoreboard?groups=4&week='+(wk+1)).then(function(d){return [d,wk+1];}):Promise.resolve([sb,wk]))
+      .then(function(x){
+        var games=[];(x[0].events||[]).forEach(function(ev){var c=ev.competitions[0],cs=c.competitors||[];
+          var H=cs.filter(function(y){return y.homeAway==='home';})[0],A=cs.filter(function(y){return y.homeAway==='away';})[0];if(!H||!A)return;
+          games.push({id:ev.id,ts:Date.parse(ev.date),home:H.team.id,away:A.team.id,hab:H.team.abbreviation,aab:A.team.abbreviation,
+            done:c.status.type.completed,hs:score(H),as:score(A),detail:c.status.type.shortDetail,state:c.status.type.state,
+            when:when(ev.date,c.timeValid===false||ev.timeValid===false),conf:!!(team[H.team.id]&&team[A.team.id]&&c.conferenceCompetition!==false)});});
+        games.sort(function(p,q){return p.ts-q.ts;});
+        m.games=games;m.week=x[1];m.h2h=[];m.loaded=true;
+        loadB12H2H(x[1]);
+      });
+    });
+  }
+  /* past conference results, only used to break ties your picks create */
+  function loadB12H2H(wk){var m=M.b12,ws=[];for(var w=1;w<wk;w++)ws.push(w);
+    Promise.all(ws.map(function(w){return getJ(API+'/site/v2/sports/football/college-football/scoreboard?groups=4&week='+w).catch(function(){return {};});}))
+    .then(function(ds){var out=[];ds.forEach(function(d){(d.events||[]).forEach(function(ev){var c=ev.competitions[0];if(!c.status.type.completed)return;
+      var cs=c.competitors||[];if(cs.length!==2||!m.base[cs[0].team.id]||!m.base[cs[1].team.id])return;
+      var a=+score(cs[0]),b=+score(cs[1]);if(a!==b)out.push(a>b?[cs[0].team.id,cs[1].team.id]:[cs[1].team.id,cs[0].team.id]);});});
+      m.h2h=out;if(Object.keys(m.picks).length)render('b12',true);});}
+  function b12Table(m){
+    var T={};Object.keys(m.base).forEach(function(k){T[k]=JSON.parse(JSON.stringify(m.base[k]));});
+    var h2h=m.h2h.slice(),touched={};
+    m.games.forEach(function(g){var w=m.picks[g.id];if(!w||g.done)return;var l=w===g.home?g.away:g.home;touched[w]=touched[l]=1;
+      if(T[w]){T[w].w++;if(g.conf)T[w].cw++;}if(T[l]){T[l].l++;if(g.conf)T[l].cl++;}if(g.conf)h2h.push([w,l]);});
+    var arr=Object.keys(T).map(function(k){var x=T[k];x.p=pct(x.cw,x.cl,0);return x;});
+    /* ties: untouched by picks -> ESPN's official order; otherwise head-to-head among the tied teams, then ESPN's order */
+    var groups={};arr.forEach(function(x){(groups[x.p]=groups[x.p]||[]).push(x);});
+    arr.forEach(function(x){var g=groups[x.p],ids={};g.forEach(function(y){ids[y.id]=1;});var w=0,n=0;
+      h2h.forEach(function(r){if(ids[r[0]]&&ids[r[1]]){if(r[0]===x.id){w++;n++;}else if(r[1]===x.id)n++;}});
+      x.mini=g.some(function(y){return touched[y.id];})&&n?w/n:null;});
+    arr.sort(function(a,b){if(b.p!==a.p)return b.p-a.p;if(a.mini!=null&&b.mini!=null&&a.mini!==b.mini)return b.mini-a.mini;return a.seed-b.seed;});
+    return arr.map(function(x){return {key:x.id,name:x.name,logo:cfbLogo(x.id),c1:x.cw+'-'+x.cl,c2:x.w+'-'+x.l,mine:x.id==='254'};});
+  }
+
+  /* ---------- render ---------- */
+  var CFG={
+    afcn:{load:loadAfcn,table:afcnTable,h1:'W-L',h2:'Div',cut:0,
+      note:'Ties: head-to-head, then division record, then conference record.',
+      side:function(m,g,s){var ab=s==='home'?g.home:g.away;return {key:ab,logo:nflLogo(ab),nm:ab,rc:''};}},
+    b12:{load:loadB12,table:b12Table,h1:'Conf',h2:'All',cut:2,
+      note:'Top 2 play in the Big 12 Championship. Ties your picks create: head-to-head among the tied teams, then ESPN\'s current order.',
+      side:function(m,g,s){var id=s==='home'?g.home:g.away;return {key:id,logo:cfbLogo(id),nm:s==='home'?g.hab:g.aab,rc:''};}}
+  };
+  var lastRank={afcn:null,b12:null};
+  function body(k){return document.querySelector('.conf-card[data-conf="'+k+'"] .conf-body');}
+  function render(k,flip){
+    var m=M[k],cfg=CFG[k],box=body(k);if(!m.loaded)return;
+    var rows=cfg.table(m),realKeys=cfg.table({base:m.base,h2h:m.h2h,games:m.games,picks:{}}).map(function(r){return r.key;});
+    var prevTop={};if(flip)box.querySelectorAll('.cf-row[data-k]').forEach(function(el){prevTop[el.getAttribute('data-k')]=el.getBoundingClientRect().top;});
+    var h='<div class="cf-row cf-hd"><div class="c">#</div><div>Team</div><div class="c">'+cfg.h1+'</div><div class="c">'+cfg.h2+'</div></div>';
+    rows.forEach(function(r,i){var d=realKeys.indexOf(r.key)-i,mv=d>0?'<span class="mv up">▲'+d+'</span>':d<0?'<span class="mv dn">▼'+(-d)+'</span>':'<span class="mv"></span>';
+      h+='<div class="cf-row'+(r.mine?' mine':'')+(cfg.cut&&i===cfg.cut-1?' cut':'')+'" data-k="'+r.key+'"><div class="rk">'+(i+1)+'</div><div class="tm">'+img(r.logo,'')+'<span>'+r.name+'</span>'+mv+'</div><div class="c">'+r.c1+'</div><div class="c">'+r.c2+'</div></div>';});
+    h+='<div class="cf-note">'+cfg.note+'</div>';
+    var np=Object.keys(m.picks).length;
+    h+='<div class="cf-wk"><b>'+(k==='afcn'?'Week ':'Week ')+m.week+' games</b><button class="cf-clear"'+(np?'':' disabled')+' onclick="CONF.clear(\''+k+'\')">Clear picks</button></div>';
+    if(!m.games.length)h+='<div class="cf-msg">No games this week.</div>';
+    m.games.forEach(function(g){var a=cfg.side(m,g,'away'),hm=cfg.side(m,g,'home'),p=m.picks[g.id];
+      var win=g.done?(+g.hs>+g.as?g.home:+g.as>+g.hs?g.away:null):p;
+      function sd(s,o,cls){return '<div class="cf-side '+cls+(win?(win===s.key?' win':' lose'):'')+(g.done?' locked':'')+'" onclick="CONF.pick(\''+k+'\',\''+g.id+'\',\''+s.key+'\')">'+img(s.logo,s.nm)+'<div><span class="nm">'+s.nm+'</span></div></div>';}
+      var mid=g.done?'<b>'+g.as+'-'+g.hs+'</b><span class="fin">Final</span>':g.state==='in'?'<b>'+g.as+'-'+g.hs+'</b>'+g.detail:'<b>'+g.when.split(' ')[1]+'</b>'+g.when.split(' ')[0];
+      h+='<div class="cf-game">'+sd(a,0,'away')+'<div class="cf-mid">'+mid+'</div>'+sd(hm,0,'home')+'</div>';});
+    h+='<div class="cf-foot">Tap a team to pick the winner, and tap again to clear. Picks only change this week\'s standings and reset when the page reloads.</div>';
+    box.innerHTML=h;
+    if(flip)box.querySelectorAll('.cf-row[data-k]').forEach(function(el){var t=prevTop[el.getAttribute('data-k')];if(t==null)return;
+      var dy=t-el.getBoundingClientRect().top;if(!dy)return;el.style.transition='none';el.style.transform='translateY('+dy+'px)';
+      requestAnimationFrame(function(){el.style.transition='transform .4s cubic-bezier(.2,.8,.2,1)';el.style.transform='';});el.classList.add('moved');});
+  }
+  function open(k){var m=M[k],box=body(k);if(m.loaded||m.loading)return;m.loading=true;
+    box.innerHTML='<div class="cf-msg">Loading standings…</div>';
+    CFG[k].load().then(function(){render(k,false);}).catch(function(){m.loading=false;box.innerHTML='<div class="cf-msg">Standings are unavailable right now. Close and reopen this section to try again.</div>';});}
+  document.querySelectorAll('.conf-card .teamhead').forEach(function(th){var card=th.parentElement,k=card.getAttribute('data-conf'),b=card.querySelector('.conf-body');
+    th.classList.add('collapsed');b.classList.add('collapsed');
+    th.addEventListener('click',function(){var c=th.classList.toggle('collapsed');b.classList.toggle('collapsed',c);if(!c)open(k);});});
+  return {
+    pick:function(k,id,key){var m=M[k],g=m.games.filter(function(x){return x.id===id;})[0];if(!g||g.done)return;
+      if(m.picks[id]===key)delete m.picks[id];else m.picks[id]=key;render(k,true);},
+    clear:function(k){M[k].picks={};render(k,true);}
+  };
+})();
 
 /* --- Coming Up tab --- */
 function renderComingUp(){
