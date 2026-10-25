@@ -210,6 +210,7 @@ td.opp{line-height:1.3;vertical-align:middle}
 .buzz-tag.pitt{background:rgba(255,182,18,.25);color:#7a5c00}
 .buzz-tag.utes{background:rgba(204,0,0,.14);color:#a00}
 .buzz-title{font-size:.86rem;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.buzz-title .rx{display:inline-block;filter:blur(3.5px);color:#333;user-select:none;-webkit-user-select:none;padding:0 2px;line-height:1.1}
 .buzz-thumb{width:100%;height:110px;object-fit:cover;border-radius:8px}
 .buzz-meta{margin-top:auto;font-size:.74rem;color:#888;display:flex;gap:10px}
 .buzz-empty,.buzz-loading{color:#999;font-size:.88rem;padding:14px 2px}
@@ -1254,6 +1255,36 @@ var ALERTS_RELEASED=true;
 })();
 if('serviceWorker' in navigator && location.protocol==='https:'){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 
+/* Profanity filter (same list as the gamehub-feeds Worker): runs again here as a backup, e.g. for stories from the rss2json relay */
+// Profanity filter shared by the gamehub-feeds Worker and the hub page.
+// Each match becomes [[rx:N]] (N = length); the hub draws that as a blurred placeholder, so the word itself never reaches the screen.
+// Patterns are anchored to word starts to avoid false hits (Dick LeBeau, Gamecocks, "fire retardant", Cockburn, Scunthorpe).
+var RX_PATTERNS = [
+  /\bf+[u\*@#v]+c+k+\w*/gi,                 // fuck, fucking, fvck, f*ck, fuuuck
+  /\bf+[\*#@$]{2,}\w*/gi,                   // f***, f**king
+  /\bf(?:ck|cking|ckin|kn|king|kin|uk|uks|ukin\w*|ucc\w*)\b/gi, // fck, fkn, fking, fuk (not Fuqua: Frenchy Fuqua is a Steelers legend)
+  /\bmotherf\w*/gi, /\bmf(?:er|ers|ing|in)?\b/gi, /\bmofo\w*/gi,
+  /\b(?:wtf|stfu|gtfo|lmfao)\b/gi,
+  /\b(?:bull|horse|dip|chicken)?sh[i1!\*]+t(?:s|ty|tier|tiest|ting|ted|show|shows|head|heads|bag|bags|ter)?\b/gi, // shit, sh*t, bullshit, shitty (not shiitake)
+  /\bs\*{2,}t?\b/gi,                        // s**t
+  /\bshite?\b/gi,
+  /\b(?:dumb|jack|bad|smart|fat|lame)?ass(?:hole|holes|hat|es|wipe)?\b/gi, // ass, asshole, dumbass (not class/assist)
+  /\ba[\*\$]{2,}(?:hole)?\w*/gi,            // a**, a**hole
+  /\bb[i1!\*]+tch\w*/gi,                    // bitch, b*tch
+  /\b(?:god)?damn(?:it|ed|n)?\b/gi, /\bgoddam\w*/gi,
+  /\bbastard\w*/gi, /\bpiss(?:ed|ing|es)?\b/gi, /\bdouche\w*/gi,
+  /\bcunt\w*/gi, /\bpuss(?:y|ies)\b/gi, /\bdickhead\w*/gi,
+  /\bn[i1!]gg\w*/gi, /\bfag(?:s|got\w*)?\b/gi, /\bretard(?:s|ed)?\b/gi
+];
+function rxClean(s) {
+  s = String(s || '');
+  for (var i = 0; i < RX_PATTERNS.length; i++) {
+    RX_PATTERNS[i].lastIndex = 0;
+    s = s.replace(RX_PATTERNS[i], function (m) { return '[[rx:' + Math.min(10, Math.max(3, m.length)) + ']]'; });
+  }
+  return s;
+}
+function rxHtml(t){var d=document.createElement('div');d.textContent=rxClean(t);return d.innerHTML.replace(/\[\[rx:(\d+)\]\]/g,function(m,n){return '<span class="rx" aria-label="word hidden">'+'xxxxxxxxxx'.slice(0,+n)+'</span>';});}
 /* --- What people are saying (RSS feeds via rss2json, past 48h, newest first) --- */
 function loadBuzz(){
   var box=document.getElementById('buzz-carousel');
@@ -1354,7 +1385,7 @@ function loadBuzz(){
       h+='<a class="buzz-card" data-url="'+esc(p.url)+'" href="'+esc(p.url)+'" target="_blank" rel="noopener"'+wm+'>'+
         '<span class="buzz-tag '+p.team+'">'+esc(p.src)+'</span>'+
         (p.thumb?'<img class="buzz-thumb" src="'+esc(p.thumb)+'" alt="">':'')+
-        '<div class="buzz-title">'+esc(p.title)+'</div>'+
+        '<div class="buzz-title">'+rxHtml(p.title)+'</div>'+
         '<div class="buzz-meta"><span>'+ago(p.created)+'</span></div>'+
         '</a>';
     }
