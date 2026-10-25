@@ -604,8 +604,8 @@ var utes=[
  ["Sat Sep 26","at Iowa State","1:30p","fox","iowa_state"],
  ["Sat Oct 10","vs Kansas","6:00p","espn","kansas"],
  ["Sat Oct 17","at Colorado","8:15p","espn","colorado"],
- ["Sat Oct 24","vs Houston","TBD","tbd","houston_c"],
- ["Sat Oct 31","at Cincinnati","TBD","tbd","cincinnati_c"],
+ ["Sat Oct 24","vs Houston","8:15p","espn","houston_c"],
+ ["Sat Oct 31","at Cincinnati","1:45p","espn","cincinnati_c"],
  ["Sat Nov 7","vs BYU","TBD","tbd","byu"],
  ["Sat Nov 14","at Arizona","TBD","tbd","arizona"],
  ["Sat Nov 21","at TCU","TBD","tbd","tcu"],
@@ -731,7 +731,8 @@ function liveSchedule(){
           var loc=opp&&opp.team?String(opp.team.location||'').toLowerCase():'';
           if(loc!==key) continue;
           used[i]=true;
-          if(comp.status&&comp.status.type&&comp.status.type.completed) return;
+          /* finished games keep their saved time and channel, except a game still marked TBD gets ESPN's final time and network */
+          if(comp.status&&comp.status.type&&comp.status.type.completed&&r[3]!=='tbd'&&/\d/.test(r[2])) return;
           var et=parts(fET,ev.date);
           var placeholder=(+et.hour%24===0&&+et.minute===0);
           var valid=ev.timeValid!==false&&comp.timeValid!==false&&!placeholder;
