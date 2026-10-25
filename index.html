@@ -1178,21 +1178,45 @@ function loadBuzz(){
   var box=document.getElementById('buzz-carousel');
   if(!box||box.getAttribute('data-loaded')) return;
   box.setAttribute('data-loaded','1');
-  // Each feed: url; team colors the pill + picks the watermark; label = source pill (null = derive from Google News "Headline - Source" titles); max = per-feed cap
+  // Feeds come from the hub's own Worker (gamehub-feeds on Cameron's Cloudflare), which fetches them server-side.
+  // rss2json is only a backup for a feed the Worker could not get. Google News, KSL and the Tribune block Cloudflare, so they were swapped for Bing News and Deseret News.
+  var FEED_API='https://gamehub-feeds.cfredrickson.workers.dev/feeds';
   var FEEDS=[
     {url:'https://www.reddit.com/r/steelers/hot/.rss',team:'pitt',label:'r/steelers',max:10},
     {url:'https://www.reddit.com/r/UtahUtes/hot/.rss',team:'utes',label:'r/UtahUtes',max:10},
-    {url:'https://news.google.com/rss/search?q=Pittsburgh+Steelers&hl=en-US&gl=US&ceid=US:en',team:'pitt',label:null,max:10},
-    {url:'https://news.google.com/rss/search?q=%22Utah+Utes%22+football&hl=en-US&gl=US&ceid=US:en',team:'utes',label:null,max:10},
+    {url:'https://www.bing.com/news/search?q=Pittsburgh+Steelers&format=rss',team:'pitt',label:null,max:10},
+    {url:'https://www.bing.com/news/search?q=%22Utah+Utes%22+football&format=rss',team:'utes',label:null,max:10},
     {url:'https://www.behindthesteelcurtain.com/rss/current.xml',team:'pitt',label:'Steel Curtain',max:5},
     {url:'https://steelersdepot.com/feed/',team:'pitt',label:'Steelers Depot',max:5},
-    {url:'https://sports.ksl.com/ncaa/utah/feed',team:'utes',label:'KSL Sports',max:5}
-    // X via rss.app is trial-only; slots removed. See cameron-website skill notes.
+    {url:'https://www.deseret.com/arc/outboundfeeds/rss/category/sports/utah-utes/?outputType=xml',team:'utes',label:'Deseret News',max:8}
   ];
   var HIDE_KEY='buzzDismissed';
   function getHidden(){try{return JSON.parse(localStorage.getItem(HIDE_KEY))||[];}catch(e){return [];}}
-  function addHidden(u){var a=getHidden();if(a.indexOf(u)<0)a.push(u);localStorage.setItem(HIDE_KEY,JSON.stringify(a.slice(-300)));}
-  function fetchFeed(f){
+  function addHidden(u){try{var a=getHidden();if(a.indexOf(u)<0)a.push(u);localStorage.setItem(HIDE_KEY,JSON.stringify(a.slice(-300)));}catch(e){}}
+  function realLink(u){ // Bing wraps article links in a click tracker; use the article itself
+    try{var q=new URL(u);if(/bing\.com$/.test(q.hostname)&&q.searchParams.get('url'))return q.searchParams.get('url');}catch(e){}
+    return u;
+  }
+  function parseXml(xml,f){
+    var doc=new DOMParser().parseFromString(xml,'text/xml');
+    var nodes=doc.getElementsByTagName('item');if(!nodes.length)nodes=doc.getElementsByTagName('entry');
+    var out=[];
+    for(var i=0;i<nodes.length&&out.length<(f.max||10);i++){
+      var n=nodes[i];
+      var txt=function(tag){var e=n.getElementsByTagName(tag)[0];return e?(e.textContent||'').trim():'';};
+      var att=function(tag,a){var e=n.getElementsByTagName(tag)[0];return e?(e.getAttribute(a)||''):'';};
+      var link=txt('link')||att('link','href');
+      var when=txt('pubDate')||txt('published')||txt('updated')||txt('dc:date');
+      var thumb=att('media:thumbnail','url')||txt('News:Image')||att('media:content','url');
+      if(!thumb){var enc=n.getElementsByTagName('enclosure')[0];if(enc&&/^image/.test(enc.getAttribute('type')||''))thumb=enc.getAttribute('url')||'';}
+      var title=txt('title'),src=f.label||txt('News:Source');
+      if(!src){var cut=title.lastIndexOf(' - ');if(cut>0){src=title.slice(cut+3).trim();title=title.slice(0,cut).trim();}else src='news';}
+      var ts=Date.parse(when);
+      if(title&&link)out.push({title:title,url:realLink(link),thumb:thumb,created:ts,team:f.team,src:src});
+    }
+    return out;
+  }
+  function viaRelay(f){
     return fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(f.url))
       .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
       .then(function(d){ if(d.status!=='ok') throw new Error('feed error'); return (d.items||[]).slice(0,f.max||10); })
@@ -1205,9 +1229,20 @@ function loadBuzz(){
             if(cut>0){ srcLabel=title.slice(cut+3).trim(); title=title.slice(0,cut).trim(); }
             else srcLabel='news';
           }
-          return {title:title,url:it.link,thumb:(it.thumbnail||'').replace(/&amp;/g,'&'),created:ts,team:f.team,src:srcLabel};
+          return {title:title,url:realLink(it.link),thumb:(it.thumbnail||'').replace(/&amp;/g,'&'),created:ts,team:f.team,src:srcLabel};
         });
       }).catch(function(){ return []; });
+  }
+  function loadAll(){
+    return fetch(FEED_API).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+      .catch(function(){ return {feeds:[]}; })
+      .then(function(d){
+        var got={};(d.feeds||[]).forEach(function(x){ if(x.ok&&x.xml) got[x.url]=x.xml; });
+        return Promise.all(FEEDS.map(function(f){
+          if(got[f.url]){ try{ var p=parseXml(got[f.url],f); if(p.length) return p; }catch(e){} }
+          return viaRelay(f);
+        }));
+      });
   }
   function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
   function dec(s){var d=document.createElement('textarea');d.innerHTML=s||'';return d.value;}
@@ -1217,7 +1252,7 @@ function loadBuzz(){
     return Math.round(m/60)+'h ago';
   }
   var cutoff=Date.now()-172800000; // 48h
-  Promise.all(FEEDS.map(fetchFeed)).then(function(results){
+  loadAll().then(function(results){
     var hidden=getHidden();
     var posts=[];
     for(var r=0;r<results.length;r++) posts=posts.concat(results[r]);
@@ -1225,7 +1260,8 @@ function loadBuzz(){
     posts.sort(function(a,b){return b.created-a.created;}); // newest first
     posts=posts.slice(0,24);
     if(!posts.length){
-      box.innerHTML='<div class="buzz-empty">Nothing trending in the past 48 hours. Check back on game day.</div>';
+      var anyFeed=results.some(function(r){return r.length;});
+      box.innerHTML='<div class="buzz-empty">'+(anyFeed?'Nothing new in the past 48 hours. Check back on game day.':'Headlines could not load right now. Close and reopen the hub in a few minutes.')+'</div>';
       return;
     }
     var h='';
