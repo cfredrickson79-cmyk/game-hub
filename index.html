@@ -642,12 +642,17 @@ function liveSchedule(){
   function parts(f,iso){var o={};f.formatToParts(new Date(iso)).forEach(function(p){o[p.type]=p.value;});return o;}
   var foxBefore=(typeof FOX_PHASE==='string')?FOX_PHASE:null;
   var TEAMS=[['pitt',steel,'23'],['utes',utes,'254']];
+  /* channel picked from the announcement by the alerts service (e.g. 'ABC or ESPN' -> ESPN app) while ESPN still lists none */
+  var hintsP=fetch('https://gamehub-alerts.cfredrickson.workers.dev/hints').then(function(r){return r.ok?r.json():{};}).catch(function(){return {};});
   var jobs=TEAMS.map(function(t){
-    return espnSchedule(t[0]).then(function(data){
+    return Promise.all([espnSchedule(t[0]),hintsP]).then(function(a){
+      var data=a[0],hints=a[1]||{};
       var evs=(data.events||[]).slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
-      var used={},changed=false;
+      var used={},seen={},changed=false;
       t[1].forEach(function(r){
         if(!r[4]||/\(preseason\)/i.test(r[1])) return;
+        seen[r[4]]=(seen[r[4]]||0)+1;
+        var hint=hints[t[0]+':'+r[4]+':'+seen[r[4]]];
         var key=r[4].replace(/_[cn]$/,'').replace(/_/g,' ').toLowerCase();
         for(var i=0;i<evs.length;i++){
           if(used[i]) continue;
@@ -672,6 +677,7 @@ function liveSchedule(){
           }
           var net=espnNet(t[0],comp);
           if(net&&SVC_META[net]&&r[3]!==net){r[3]=net;changed=true;}
+          else if(!net&&r[3]==='tbd'&&hint&&hint.net&&SVC_META[hint.net]){r[3]=hint.net;changed=true;}
           return;
         }
       });
