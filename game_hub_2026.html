@@ -890,9 +890,11 @@ var CONF=(function(){
   /* ---------- AFC North ---------- */
   var AFCN=['PIT','BAL','CIN','CLE'],AFCN_ID={PIT:23,BAL:33,CIN:4,CLE:5};
   function loadAfcn(){
-    var m=M.afcn;
-    return Promise.all([getJ(API+'/v2/sports/football/nfl/standings')].concat(AFCN.map(function(t){
-      return getJ(API+'/site/v2/sports/football/nfl/teams/'+t.toLowerCase()+'/schedule?season=2026&seasontype=2');})))
+    var m=M.afcn,SB=API+'/site/v2/sports/football/nfl/scoreboard';
+    /* ESPN's per-team schedule feed went empty for browsers (Nov 2026), so the week's games and division head-to-heads come from the league scoreboard, same as Big 12 */
+    function wkUrl(w){return SB+'?dates=2026&seasontype=2&week='+w;}
+    function isDone(ev){return ev.competitions[0].status.type.completed;}
+    return Promise.all([getJ(API+'/v2/sports/football/nfl/standings'),getJ(SB)])
     .then(function(r){
       var st=r[0],afc={},team={},rest={};
       (st.children||[]).forEach(function(c){var ents=findEntries(c)||[];ents.forEach(function(e){
@@ -901,22 +903,28 @@ var CONF=(function(){
         if(AFCN.indexOf(ab)>=0){var dv=rec(s.vsdiv&&s.vsdiv.displayValue),cf=rec(s.vsconf&&s.vsconf.displayValue);
           team[ab]={code:ab,name:e.team.location,w:tot[0],l:tot[1],t:tot[2],dw:dv[0],dl:dv[1],dt:dv[2],cw:cf[0],cl:cf[1],ct:cf[2],
             seed:+((s.playoffseed&&s.playoffseed.value)||99)};}});});
-      /* finals between division teams (head-to-head) and this week's games */
-      var evs={},h2h=[],week=99;
-      r.slice(1).forEach(function(d){(d.events||[]).forEach(function(ev){evs[ev.id]=ev;});});
-      Object.keys(evs).forEach(function(id){var ev=evs[id],c=ev.competitions[0];
-        if(!c.status.type.completed&&ev.week&&ev.week.number<week)week=ev.week.number;});
-      var games=[];
-      Object.keys(evs).forEach(function(id){var ev=evs[id],c=ev.competitions[0],cs=c.competitors||[];
-        var H=cs.filter(function(x){return x.homeAway==='home';})[0],A=cs.filter(function(x){return x.homeAway==='away';})[0];if(!H||!A)return;
-        var h=H.team.abbreviation,a=A.team.abbreviation,done=c.status.type.completed;
-        if(done&&AFCN.indexOf(h)>=0&&AFCN.indexOf(a)>=0){var hs=+score(H),as=+score(A);if(hs!==as)h2h.push(hs>as?[h,a]:[a,h]);}
-        if(ev.week&&ev.week.number===week)games.push({id:id,ts:Date.parse(ev.date),home:h,away:a,done:done,
-          hs:score(H),as:score(A),detail:c.status.type.shortDetail,state:c.status.type.state,
-          when:when(ev.date,c.timeValid===false||ev.timeValid===false),
-          conf:!!(afc[h]&&afc[a]),div:AFCN.indexOf(h)>=0&&AFCN.indexOf(a)>=0,link:espnLink(ev,'nfl')});});
-      games.sort(function(x,y){return x.ts-y.ts;});
-      m.base=team;m.h2h=h2h;m.week=week;m.games=games;m.rest=rest;m.afc=afc;m.loaded=true;
+      /* this week = the scoreboard's week, or the next one once every game in it is final */
+      var sb=r[1],wk=(sb.week&&sb.week.number)||1,ev0=sb.events||[],reg=!sb.season||sb.season.type===2;
+      var cur=(reg&&ev0.length&&ev0.every(isDone)&&wk<18)?getJ(wkUrl(wk+1)).then(function(d){return [d,wk+1];}):Promise.resolve([sb,wk]);
+      return cur.then(function(x){var w=x[1],past=[];for(var i=1;i<w;i++)past.push(i);
+        return Promise.all(past.map(function(i){return getJ(wkUrl(i)).catch(function(){return {};});})).then(function(ps){
+          /* finals between division teams (head-to-head) and this week's games */
+          var h2h=[],games=[];
+          ps.concat([x[0]]).forEach(function(d){(d.events||[]).forEach(function(ev){var c=ev.competitions[0],cs=c.competitors||[];
+            var H=cs.filter(function(y){return y.homeAway==='home';})[0],A=cs.filter(function(y){return y.homeAway==='away';})[0];if(!H||!A)return;
+            var h=H.team.abbreviation,a=A.team.abbreviation;
+            if(c.status.type.completed&&AFCN.indexOf(h)>=0&&AFCN.indexOf(a)>=0){var hs=+score(H),as=+score(A);if(hs!==as)h2h.push(hs>as?[h,a]:[a,h]);}});});
+          (x[0].events||[]).forEach(function(ev){var c=ev.competitions[0],cs=c.competitors||[];
+            var H=cs.filter(function(y){return y.homeAway==='home';})[0],A=cs.filter(function(y){return y.homeAway==='away';})[0];if(!H||!A)return;
+            var h=H.team.abbreviation,a=A.team.abbreviation;if(AFCN.indexOf(h)<0&&AFCN.indexOf(a)<0)return;
+            games.push({id:ev.id,ts:Date.parse(ev.date),home:h,away:a,done:c.status.type.completed,
+              hs:score(H),as:score(A),detail:c.status.type.shortDetail,state:c.status.type.state,
+              when:when(ev.date,c.timeValid===false||ev.timeValid===false),
+              conf:!!(afc[h]&&afc[a]),div:AFCN.indexOf(h)>=0&&AFCN.indexOf(a)>=0,link:espnLink(ev,'nfl')});});
+          games.sort(function(p,q){return p.ts-q.ts;});
+          m.base=team;m.h2h=h2h;m.week=games.length?w:null;m.games=games;m.rest=rest;m.afc=afc;m.loaded=true;
+        });
+      });
     });
   }
   function afcnTable(m){
@@ -1000,7 +1008,7 @@ var CONF=(function(){
       h+='<div class="cf-row'+(r.mine?' mine':'')+(cfg.cut&&i===cfg.cut-1?' cut':'')+'" data-k="'+r.key+'"><div class="rk">'+(i+1)+'</div><div class="tm">'+img(r.logo,'')+'<span>'+r.name+'</span>'+mv+'</div><div class="c">'+r.c1+'</div><div class="c">'+r.c2+'</div></div>';});
     h+='<div class="cf-note">'+cfg.note+'</div>';
     var np=Object.keys(m.picks).length;
-    h+='<div class="cf-wk"><b>'+(k==='afcn'?'Week ':'Week ')+m.week+' games</b><button class="cf-clear"'+(np?'':' disabled')+' onclick="CONF.clear(\''+k+'\')">Clear picks</button></div>';
+    h+='<div class="cf-wk"><b>'+(m.week?'Week '+m.week+' games':'This week\'s games')+'</b><button class="cf-clear"'+(np?'':' disabled')+' onclick="CONF.clear(\''+k+'\')">Clear picks</button></div>';
     if(!m.games.length)h+='<div class="cf-msg">No games this week.</div>';
     m.games.forEach(function(g){var a=cfg.side(m,g,'away'),hm=cfg.side(m,g,'home'),p=m.picks[g.id];
       var win=g.done?(+g.hs>+g.as?g.home:+g.as>+g.hs?g.away:null):p;
