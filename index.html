@@ -515,7 +515,7 @@ var steel=[
  ["Sun Oct 25","vs New Orleans (Paris)","7:30a","nfl","new_orleans"],
  ["Sun Nov 1","vs Cleveland","11:00a","yt","cleveland"],
  ["Sun Nov 15","at Cincinnati","6:20p","pcock","cincinnati"],
- ["Sun Nov 22","at Philadelphia","2:25p","yt","philadelphia"],
+ ["Sun Nov 22","at Philadelphia","11:00a","yt","philadelphia"],
  ["Fri Nov 27","vs Denver (Black Fri)","1:00p","prime","denver"],
  ["Sun Dec 6","vs Houston","6:20p","pcock","houston"],
  ["Mon Dec 14","at Jacksonville","6:15p","espn","jacksonville"],
@@ -1113,6 +1113,14 @@ function renderKickClocks(){
 }
 renderKickClocks();
 setTimeout(liveSchedule,0);
+/* Re-check ESPN when the home-screen app comes back on screen and every 15 min while open (Android resumes without reloading). */
+(function(){
+  var last=Date.now();
+  function again(){ if(Date.now()-last<60000) return; last=Date.now(); _espnCache={}; liveSchedule(); }
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') again(); });
+  window.addEventListener('pageshow',function(e){ if(e.persisted) again(); });
+  setInterval(function(){ if(document.visibilityState==='visible') again(); },15*60000);
+})();
 /* --- Game alerts: helmet toggle + first-open ask. Preview-only (?preview=1) until ALERTS_RELEASED --- */
 var ALERTS_API='https://gamehub-alerts.cfredrickson.workers.dev';
 var ALERTS_RELEASED=true;
